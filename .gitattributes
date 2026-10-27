@@ -1,0 +1,9 @@
+* text=auto
+
+# Lo script per macOS e Linux deve avere terminazioni di riga LF
+gradlew text eol=lf
+
+# Gli script per Windows devono avere terminazioni di riga CRLF
+*.bat text eol=crlf
+
+*.jar binary

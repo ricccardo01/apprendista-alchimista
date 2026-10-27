@@ -1,0 +1,6 @@
+plugins {
+    // Se sul computer manca Java 25, Gradle lo scarica da solo
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'apprendista-alchimista'

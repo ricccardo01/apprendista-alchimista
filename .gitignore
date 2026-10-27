@@ -1,0 +1,27 @@
+# File generati da Gradle
+build/
+.gradle/
+
+# File degli editor
+.vscode/
+.idea/
+*.iml
+bin/
+out/
+.project
+.classpath
+.settings/
+.claude/
+
+# File di sistema
+.DS_Store
+Thumbs.db
+
+# Salvataggi di prova
+salvataggi/
+salvataggio*.json
+
+# File di lavoro personali (non vanno su GitHub)
+CLAUDE.md
+uso-ai.md
+materiale-corso/
