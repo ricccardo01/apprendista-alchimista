@@ -1,10 +1,11 @@
 package it.unicam.cs.mpgc.rpg130759.modello;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
- * Chi può partecipare a uno scontro: ha un nome, un elemento, dei punti vita
- * e dei reagenti, l'energia con cui paga le azioni.
+ * Chi può partecipare a uno scontro: ha un nome, un elemento, dei punti vita,
+ * dei reagenti (l'energia con cui paga le azioni) e le mosse che conosce.
  * Garantisce che vita e reagenti restino sempre tra 0 e il massimo.
  */
 public abstract class Combattente {
@@ -61,6 +62,13 @@ public abstract class Combattente {
     public int getReagenti() {
         return reagenti;
     }
+
+    /**
+     * Ogni tipo di combattente decide da dove prende le sue mosse.
+     *
+     * @return le azioni che il combattente conosce, in una lista non modificabile
+     */
+    public abstract List<Azione> getAzioni();
 
     /**
      * Toglie punti vita, senza scendere sotto lo zero.

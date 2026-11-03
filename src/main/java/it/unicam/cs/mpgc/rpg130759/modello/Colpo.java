@@ -3,22 +3,23 @@ package it.unicam.cs.mpgc.rpg130759.modello;
 import java.util.Objects;
 
 /**
- * Una formula che lancia una fiala di un elemento contro il bersaglio.
- * Le fiale che cambiano solo nei numeri sono oggetti diversi di questa classe.
+ * Un'azione che colpisce il bersaglio con un danno di un certo elemento.
+ * La usano le fiale dell'alchimista e gli attacchi dei nemici: le mosse che
+ * cambiano solo nei numeri sono oggetti diversi di questa classe.
  */
-public class LancioFiala implements Azione {
+public class Colpo implements Azione {
     private final String nome;
     private final int costo;
     private final int danno;
     private final Elemento elemento;
 
     /**
-     * @param nome il nome della formula
+     * @param nome il nome della mossa
      * @param costo i reagenti consumati, non negativi
      * @param danno il danno prima del moltiplicatore, maggiore di zero
-     * @param elemento l'elemento della fiala
+     * @param elemento l'elemento del colpo
      */
-    public LancioFiala(String nome, int costo, int danno, Elemento elemento) {
+    public Colpo(String nome, int costo, int danno, Elemento elemento) {
         this.nome = Objects.requireNonNull(nome, "Il nome è obbligatorio");
         this.elemento = Objects.requireNonNull(elemento, "L'elemento è obbligatorio");
         if (costo < 0) {

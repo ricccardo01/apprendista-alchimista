@@ -100,7 +100,7 @@ class CombattenteTest {
     void usareUnAzionePagaIlCostoEApplicaLEffetto() {
         Combattente chi = new CombattenteDiProva(Elemento.NEUTRO);
         Combattente bersaglio = new CombattenteDiProva(Elemento.NEUTRO);
-        Azione fiala = new LancioFiala("Fiala di prova", 4, 10, Elemento.NEUTRO);
+        Azione fiala = new Colpo("Fiala di prova", 4, 10, Elemento.NEUTRO);
 
         chi.usa(fiala, bersaglio);
 
@@ -112,7 +112,7 @@ class CombattenteTest {
     void senzaReagentiLAzioneNonVieneEseguita() {
         Combattente chi = new CombattenteDiProva(Elemento.NEUTRO, 50, 3);
         Combattente bersaglio = new CombattenteDiProva(Elemento.NEUTRO);
-        Azione fiala = new LancioFiala("Fiala di prova", 4, 10, Elemento.NEUTRO);
+        Azione fiala = new Colpo("Fiala di prova", 4, 10, Elemento.NEUTRO);
 
         assertThrows(IllegalStateException.class, () -> chi.usa(fiala, bersaglio));
         assertEquals(3, chi.getReagenti());

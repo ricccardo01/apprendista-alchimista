@@ -29,9 +29,13 @@ Due metodi collegano il combattente alle azioni:
 - `subisciColpo(danno, elemento)` applica il moltiplicatore tra l'elemento del colpo e quello del combattente, poi toglie la vita. Tengo il calcolo qui e le azioni non lo ripetono.
 - `usa(azione, bersaglio)` paga il costo dell'azione e poi la esegue. Se i reagenti non bastano lancia un'eccezione e non succede niente, quindi la grafica dovrà chiedere prima `haReagenti`.
 
+Il metodo astratto `getAzioni()` restituisce le mosse che il combattente conosce. Lo dichiaro qui ma non lo scrivo: l'alchimista e i nemici prendono le mosse da posti diversi, quindi ogni sottoclasse lo scrive a modo suo. Il combattimento potrà chiedere le mosse a qualsiasi combattente senza sapere di che tipo è. La lista che restituisco non si può modificare da fuori, così nessuno aggiunge mosse di nascosto.
+
 ### `Alchimista`
 
 È il personaggio del giocatore. Eredita da `Combattente` vita e reagenti e aggiunge lo strumento che impugna. Comincia con il Pestello di Legno, elemento Neutro, 100 di vita e 20 reagenti. Con l'elemento Neutro subisce danno normale da tutti i principi. I numeri sono provvisori e li rivedrò nel bilanciamento.
+
+All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e una formula per ogni principio (Fiala Ardente di Zolfo, Nebbia Mercuriale di Mercurio, Polvere Cristallizzante di Sale). Le tre formule costano 4 reagenti e fanno 10 di danno. Avendo un elemento per tipo, posso sfruttare il vantaggio contro qualsiasi nemico fin dal primo piano.
 
 ### `Azione` (interfaccia)
 
@@ -47,13 +51,27 @@ L'attrezzo che l'alchimista tiene in mano: nome, danno ed elemento dell'attacco 
 
 Il colpo con lo strumento. Non costa niente e usa danno ed elemento dello strumento che riceve nel costruttore.
 
-### `LancioFiala`
+### `Colpo`
 
-Una formula che lancia una fiala di un elemento. Le fiale che cambiano solo nei numeri (nome, costo, danno, elemento) sono oggetti diversi di questa stessa classe e non classi separate, per esempio la Fiala Ardente (Zolfo).
+Una mossa che colpisce il bersaglio con un danno di un elemento. Le mosse che cambiano solo nei numeri (nome, costo, danno, elemento) sono oggetti diversi di questa stessa classe e non classi separate: per esempio la Fiala Ardente dell'alchimista o il morso di un nemico.
+
+Prima la classe si chiamava `LancioFiala`. Quando ho scritto i nemici mi sono accorto che anche i loro attacchi funzionano allo stesso modo, ma chiamare "lancio di una fiala" il morso di un verme era sbagliato. Ho rinominato la classe e l'ho riusata invece di scriverne una copia.
 
 ### `Distillazione`
 
 Chi la usa salta l'attacco e recupera 8 reagenti e 5 punti vita. Non costa niente e non tocca il bersaglio. Più avanti, quando aggiungerò gli effetti, ridurrà anche il danno del colpo successivo.
+
+### `Nemico` (classe astratta)
+
+Un combattente che il gioco controlla da solo. Tiene la lista delle sue mosse e dichiara il metodo astratto `scegliAzione()`: ogni tipo di nemico decide a modo suo cosa fare nel turno. Il nemico comune sceglie a caso, il Golem di Piombo alternerà attacco e pausa. Per un comportamento nuovo scrivo una sottoclasse e il combattimento continua a chiamare `scegliAzione()` senza modifiche.
+
+Il costruttore rifiuta un nemico senza almeno una mossa gratuita. Se i reagenti finiscono, il nemico ha sempre qualcosa da fare e la scelta della mossa non resta mai senza opzioni.
+
+### `NemicoComune`
+
+A ogni turno sceglie a caso una mossa tra quelle che può pagare. I nove nemici comuni cambiano solo nei numeri e nelle mosse, quindi sono oggetti diversi di questa classe.
+
+Il generatore casuale (`Random`) lo passo dal costruttore invece di crearlo dentro la classe. Nei test uso un `Random` con un seme fisso: con lo stesso seme esce sempre la stessa sequenza, quindi posso controllare il risultato.
 
 ## Package `grafica`
 
@@ -67,6 +85,8 @@ Avvia l'applicazione JavaFX e apre la finestra principale del gioco.
 
 `CombattenteTest` controlla danni, cure, sconfitta, reagenti, il moltiplicatore dei colpi (anche l'arrotondamento: metà di 5 fa 3) e il metodo `usa`, compreso il caso in cui i reagenti non bastano. Una classe astratta non si può creare, quindi i test usano `CombattenteDiProva`, una piccola sottoclasse che esiste solo nella cartella dei test.
 
-`AlchimistaTest` controlla lo stato iniziale e lo strumento di partenza.
+`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le cinque mosse iniziali e che la lista delle mosse non si possa modificare da fuori.
 
-`AzioniTest` controlla cosa fanno attacco base, fiala e Distillazione, e che non si possano creare strumenti o fiale con valori non validi.
+`AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
+
+`NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.

@@ -21,7 +21,7 @@ class AzioniTest {
 
     @Test
     void laFialaColpisceConIlSuoElemento() {
-        Azione fiala = new LancioFiala("Fiala Ardente", 4, 10, Elemento.ZOLFO);
+        Azione fiala = new Colpo("Fiala Ardente", 4, 10, Elemento.ZOLFO);
         Combattente bersaglio = new CombattenteDiProva(Elemento.SALE);
 
         fiala.esegui(new CombattenteDiProva(Elemento.NEUTRO), bersaglio);
@@ -46,8 +46,8 @@ class AzioniTest {
     @Test
     void valoriNonValidiNelleAzioniNonSonoAmmessi() {
         assertThrows(IllegalArgumentException.class, () -> new Strumento("Rotto", 0, Elemento.NEUTRO));
-        assertThrows(IllegalArgumentException.class, () -> new LancioFiala("Vuota", 4, 0, Elemento.ZOLFO));
-        assertThrows(IllegalArgumentException.class, () -> new LancioFiala("Gratis", -1, 10, Elemento.ZOLFO));
+        assertThrows(IllegalArgumentException.class, () -> new Colpo("Vuota", 4, 0, Elemento.ZOLFO));
+        assertThrows(IllegalArgumentException.class, () -> new Colpo("Gratis", -1, 10, Elemento.ZOLFO));
         assertThrows(NullPointerException.class, () -> new AttaccoBase(null));
     }
 }
