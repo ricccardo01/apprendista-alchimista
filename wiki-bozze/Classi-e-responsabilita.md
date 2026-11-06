@@ -73,6 +73,21 @@ A ogni turno sceglie a caso una mossa tra quelle che può pagare. I nove nemici 
 
 Il generatore casuale (`Random`) lo passo dal costruttore invece di crearlo dentro la classe. Nei test uso un `Random` con un seme fisso: con lo stesso seme esce sempre la stessa sequenza, quindi posso controllare il risultato.
 
+### `Combattimento`
+
+Gestisce uno scontro tra l'alchimista e un nemico. Decide l'ordine dei turni, controlla le mosse e dice quando lo scontro è finito. Ho tenuto queste regole fuori dai combattenti e fuori dalla grafica: l'alchimista sa usare una mossa ma non sa quando tocca a lui, e la grafica si limita a passare la mossa scelta dal giocatore. Un'interfaccia web o mobile potrebbe usare questa classe così com'è.
+
+Il metodo `turnoAlchimista(azione)` gioca un turno intero:
+
+1. controlla che lo scontro non sia finito e che l'alchimista conosca la mossa;
+2. l'alchimista usa la mossa sul nemico (se i reagenti non bastano, `usa` lancia un'eccezione e il turno non parte);
+3. se il nemico resta in piedi, sceglie una mossa con `scegliAzione()` e la usa sull'alchimista;
+4. a fine turno tutti e due recuperano 2 reagenti.
+
+L'alchimista muove per primo. Se sconfigge il nemico, il nemico non contrattacca, quindi `isVinto()` controlla solo se il nemico è sconfitto.
+
+Il combattimento scrive nel registro una frase per ogni mossa, per esempio "Verme Cieco usa Morso: 5 danni a Alchimista". Calcolo il danno come differenza tra la vita del bersaglio prima e dopo la mossa, così funziona con qualsiasi azione senza cambiare l'interfaccia `Azione`. La grafica legge il registro con `getRegistro()`, che restituisce una lista non modificabile. Le frasi sono semplici stringhe e non dipendono da JavaFX.
+
 ## Package `grafica`
 
 ### `Main`
@@ -90,3 +105,5 @@ Avvia l'applicazione JavaFX e apre la finestra principale del gioco.
 `AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
 
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
+
+`CombattimentoTest` controlla un turno completo con i messaggi del registro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
