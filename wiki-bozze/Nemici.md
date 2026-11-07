@@ -35,3 +35,21 @@ Le profondità, vicino alla Camera del Sigillo.
 | Mummia di Sale | Sale | Il maestro conservava sotto sale i corpi degli esperimenti più vecchi, vicino alla porta sigillata. |
 
 Nel codice sono tutti oggetti della classe `NemicoComune`: cambiano nome, elemento, vita, reagenti e mosse. Il quarto piano di ogni zona ha invece un guardiano.
+
+Nei primi tre piani di una zona incontro tutti e tre i nemici, ma l'ordine cambia a ogni partita.
+
+## Numeri e mosse
+
+Ogni nemico ha 10 reagenti, una mossa gratuita e una mossa forte che costa 6 reagenti. Tutte e due le mosse sono del suo elemento. I numeri sono provvisori.
+
+| Nemico | Vita | Mossa gratuita (danno) | Mossa forte (danno) |
+|---|---|---|---|
+| Ombra di Fuliggine | 28 | Artiglio di Fumo (6) | Nube di Fuliggine (9) |
+| Verme Cieco | 34 | Morso (5) | Stretta (9) |
+| Ragno Bianco | 30 | Morso (5) | Puntura (10) |
+| Cane a Due Teste | 45 | Morso (8) | Doppio Morso (14) |
+| Omuncolo | 40 | Graffio (7) | Vapore di Mercurio (13) |
+| Manichino di Gesso | 50 | Pugno (7) | Schianto (12) |
+| Divoratore di Cenere | 60 | Morso Rovente (11) | Fiammata (17) |
+| Apprendista Corrotto | 55 | Fiala Rubata (10) | Mercurio Bollente (17) |
+| Mummia di Sale | 65 | Colpo di Bende (10) | Sale negli Occhi (16) |

@@ -88,6 +88,38 @@ L'alchimista muove per primo. Se sconfigge il nemico, il nemico non contrattacca
 
 Il combattimento scrive nel registro una frase per ogni mossa, per esempio "Verme Cieco usa Morso: 5 danni a Alchimista". Calcolo il danno come differenza tra la vita del bersaglio prima e dopo la mossa, così funziona con qualsiasi azione senza cambiare l'interfaccia `Azione`. La grafica legge il registro con `getRegistro()`, che restituisce una lista non modificabile. Le frasi sono semplici stringhe e non dipendono da JavaFX.
 
+### `Zona` (enum)
+
+Le tre zone del laboratorio: Cantine, Laboratorio e Fornace. Ogni zona ha 4 piani. `delPiano(piano)` dice a quale zona appartiene un piano e `posizioneNellaZona(piano)` dice se è il primo, il secondo, il terzo o il quarto piano della zona. Faccio questo conto in un posto solo, così le altre classi non ripetono la divisione.
+
+Calcolo l'ultimo piano moltiplicando il numero delle zone per i piani di ogni zona. Se aggiungo una quarta zona all'enum, il gioco arriva da solo fino al piano 16.
+
+### `GeneratoreNemici` (interfaccia)
+
+Ha un solo metodo, `creaNemico(piano)`, che restituisce il nemico di un piano. `Partita` conosce solo questa interfaccia e non sa come nascono i nemici. Se voglio regole diverse (un'altra zona, una modalità più difficile) scrivo una nuova implementazione e passo quella alla partita, senza modificare `Partita`. Lo stesso vale nei test: gli passo un generatore di prova che crea nemici prevedibili.
+
+### `GeneratoreNemiciPerZona`
+
+Contiene i numeri e le mosse dei nove nemici comuni. Ogni nemico ha una mossa gratuita e una più forte che costa 6 reagenti. Nelle zone più profonde i nemici hanno più vita e colpiscono più forte. I valori sono provvisori e li sistemerò nel bilanciamento.
+
+Nei primi tre piani di ogni zona incontro tutti e tre i nemici della zona, uno per principio, ma in un ordine diverso a ogni partita. Ho scelto così per avere partite più varie: in ogni zona devo usare tutti e tre gli elementi. Per farlo, all'inizio della partita il generatore mescola la lista dei tre principi di ogni zona con `Collections.shuffle` e la salva in una `EnumMap`, una mappa che ha come chiavi i valori di un enum. Per ora anche il quarto piano di ogni zona ha un nemico comune, scelto a caso. Lì arriveranno i guardiani.
+
+Ricevo il `Random` dal costruttore, come in `NemicoComune`, così nei test posso usare un seme fisso.
+
+### `StatoPartita` (enum)
+
+Dice se la partita è in corso, vinta o persa.
+
+### `Partita`
+
+Tiene insieme la partita intera: l'alchimista, il piano attuale e lo scontro in corso. La grafica parlerà solo con questa classe.
+
+`passaAlPianoSuccessivo()` porta l'alchimista al piano dopo. Prima controlla che lo scontro sia vinto e che la partita non sia finita, poi restituisce all'alchimista il 30% della vita massima e tutti i reagenti, e chiede al generatore il nemico del nuovo piano. Senza questo recupero il gioco diventerebbe frustrante dopo pochi piani.
+
+`getStato()` restituisce PERSA se l'alchimista è sconfitto e VINTA se ha battuto il nemico dell'ultimo piano. Per ora l'ultimo piano è il 12. Quando aggiungerò la Camera del Sigillo, la vittoria arriverà al piano 13.
+
+La partita riceve l'alchimista e il generatore dal costruttore, invece di crearli lei. Così dipende da un'interfaccia e non da una classe concreta (principio di inversione delle dipendenze), e quando caricherò un salvataggio potrò passarle un alchimista già esistente.
+
 ## Package `grafica`
 
 ### `Main`
@@ -107,3 +139,9 @@ Avvia l'applicazione JavaFX e apre la finestra principale del gioco.
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
 
 `CombattimentoTest` controlla un turno completo con i messaggi del registro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
+
+`ZonaTest` controlla a quale zona appartengono i piani, la posizione dentro la zona e che i piani fuori dalle zone vengano rifiutati.
+
+`GeneratoreNemiciPerZonaTest` prova 20 semi diversi e controlla ogni volta che nei primi tre piani di ogni zona escano tutti e tre i principi. Controlla anche che ogni volta nasca un nemico nuovo con la vita piena e che i nemici della Fornace abbiano più vita di quelli delle Cantine.
+
+`PartitaTest` usa due generatori di prova scritti come lambda: uno crea nemici che cadono al primo colpo, l'altro nemici imbattibili. Controlla l'inizio della partita, che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), la vittoria all'ultimo piano e la sconfitta.
