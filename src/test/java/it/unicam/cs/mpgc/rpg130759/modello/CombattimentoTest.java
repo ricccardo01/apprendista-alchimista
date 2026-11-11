@@ -52,6 +52,25 @@ class CombattimentoTest {
     }
 
     @Test
+    void lElementoDelNemicoSiScopreDopoLaSuaPrimaMossa() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(30, DANNO_MORSO));
+        assertFalse(scontro.isElementoNemicoRivelato());
+
+        scontro.turnoAlchimista(attaccoBase());
+
+        assertTrue(scontro.isElementoNemicoRivelato());
+    }
+
+    @Test
+    void seIlNemicoMuorePrimaDiMuovereLElementoRestaNascosto() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(5, DANNO_MORSO));
+
+        scontro.turnoAlchimista(attaccoBase());
+
+        assertFalse(scontro.isElementoNemicoRivelato());
+    }
+
+    @Test
     void ilVantaggioDiElementoValeAncheNelloScontro() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
 

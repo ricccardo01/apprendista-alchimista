@@ -86,6 +86,8 @@ Il metodo `turnoAlchimista(azione)` gioca un turno intero:
 
 L'alchimista muove per primo. Se sconfigge il nemico, il nemico non contrattacca, quindi `isVinto()` controlla solo se il nemico è sconfitto.
 
+All'inizio dello scontro chi gioca non sa di che elemento è il nemico. Lo scopre dopo la prima mossa del nemico: `isElementoNemicoRivelato()` diventa vero appena il nemico ha mosso. Prima si può solo intuire, guardando quanti danni fanno le proprie fiale. Ho messo questa regola nel combattimento e non nella grafica perché fa parte del gioco: così vale per qualsiasi interfaccia e la posso controllare con un test.
+
 Il combattimento scrive nel registro una frase per ogni mossa, per esempio "Verme Cieco usa Morso: 5 danni a Alchimista". Calcolo il danno come differenza tra la vita del bersaglio prima e dopo la mossa, così funziona con qualsiasi azione senza cambiare l'interfaccia `Azione`. La grafica legge il registro con `getRegistro()`, che restituisce una lista non modificabile. Le frasi sono semplici stringhe e non dipendono da JavaFX.
 
 ### `Zona` (enum)
@@ -124,7 +126,15 @@ La partita riceve l'alchimista e il generatore dal costruttore, invece di crearl
 
 ### `Main`
 
-Avvia l'applicazione JavaFX e apre la finestra principale del gioco.
+Avvia l'applicazione JavaFX, crea una partita nuova e apre la finestra con lo scontro del primo piano.
+
+### `SchermataCombattimento`
+
+Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Sopra la mossa c'è il suo costo in reagenti, e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`).
+
+Quando si preme un pulsante, la schermata passa la mossa a `turnoAlchimista` e poi rilegge tutto dal modello: vita, reagenti, registro e se l'elemento del nemico è stato scoperto. Finché non è scoperto il riquadro del nemico ha solo un bordo tratteggiato; dopo prende il colore del suo elemento (Zolfo giallo, Mercurio grigio, Sale azzurrino), e una piccola legenda spiega i colori.
+
+La schermata non contiene regole del gioco. Per fare una versione web o mobile basterebbe riscrivere questa classe, lasciando il modello com'è.
 
 ## Test
 
@@ -138,7 +148,7 @@ Avvia l'applicazione JavaFX e apre la finestra principale del gioco.
 
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
 
-`CombattimentoTest` controlla un turno completo con i messaggi del registro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
+`CombattimentoTest` controlla un turno completo con i messaggi del registro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno, quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
 
 `ZonaTest` controlla a quale zona appartengono i piani, la posizione dentro la zona e che i piani fuori dalle zone vengano rifiutati.
 

@@ -2,7 +2,7 @@
 
 Nelle rovine vivono gli esperimenti falliti del maestro: animali trasformati e creature nate dai suoi lavori. Ogni zona ha tre nemici comuni, uno per principio, e ognuno si trova in un posto dove avrebbe senso incontrarlo.
 
-Il nome non dice l'elemento. Lo deve capire chi gioca guardando il nemico: la grafica mostra l'elemento con il suo aspetto.
+Il nome non dice l'elemento, e all'inizio dello scontro non lo dice nemmeno la grafica. Chi gioca può intuirlo dai danni delle proprie fiale, oppure lo scopre dopo la prima mossa del nemico: da quel momento il riquadro del nemico prende il colore del suo elemento.
 
 ## Cantine (piani 1-3)
 

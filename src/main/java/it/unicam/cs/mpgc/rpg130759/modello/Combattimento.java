@@ -16,6 +16,7 @@ public class Combattimento {
     private final Alchimista alchimista;
     private final Nemico nemico;
     private final List<String> registro = new ArrayList<>();
+    private boolean elementoNemicoRivelato;
 
     /**
      * @param alchimista il personaggio del giocatore
@@ -39,6 +40,16 @@ public class Combattimento {
      */
     public List<String> getRegistro() {
         return Collections.unmodifiableList(registro);
+    }
+
+    /**
+     * All'inizio il giocatore non sa di che elemento è il nemico:
+     * lo scopre vedendo la sua prima mossa.
+     *
+     * @return true se il nemico ha già fatto almeno una mossa
+     */
+    public boolean isElementoNemicoRivelato() {
+        return elementoNemicoRivelato;
     }
 
     public boolean isFinito() {
@@ -74,6 +85,7 @@ public class Combattimento {
         esegui(alchimista, azione, nemico);
         if (!nemico.isSconfitto()) {
             esegui(nemico, nemico.scegliAzione(), alchimista);
+            elementoNemicoRivelato = true;
         }
         if (!isFinito()) {
             alchimista.recuperaReagenti(REAGENTI_PER_TURNO);
