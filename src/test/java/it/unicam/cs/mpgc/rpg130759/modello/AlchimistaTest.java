@@ -12,7 +12,7 @@ class AlchimistaTest {
 
     @Test
     void iniziaNeutroConVitaEReagentiAlMassimo() {
-        Alchimista alchimista = new Alchimista("Apprendista");
+        Alchimista alchimista = new Alchimista("Allievo");
 
         assertEquals(Elemento.NEUTRO, alchimista.getElemento());
         assertEquals(alchimista.getVitaMassima(), alchimista.getVita());
@@ -21,14 +21,14 @@ class AlchimistaTest {
 
     @Test
     void iniziaConIlPestelloDiLegno() {
-        Alchimista alchimista = new Alchimista("Apprendista");
+        Alchimista alchimista = new Alchimista("Allievo");
 
         assertEquals("Pestello di Legno", alchimista.getStrumento().getNome());
     }
 
     @Test
     void conosceAttaccoDistillazioneEUnaFormulaPerOgniPrincipio() {
-        Alchimista alchimista = new Alchimista("Apprendista");
+        Alchimista alchimista = new Alchimista("Allievo");
         List<String> nomi = new ArrayList<>();
         for (Azione azione : alchimista.getAzioni()) {
             nomi.add(azione.getNome());
@@ -39,8 +39,22 @@ class AlchimistaTest {
     }
 
     @Test
+    void rifiutaUnNomeVuotoOFattoSoloDiSpazi() {
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista(""));
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista("   "));
+    }
+
+    @Test
+    void accettaUnNomeLungoFinoAlMassimoERifiutaQuelliPiuLunghi() {
+        String nomeMassimo = "a".repeat(Alchimista.LUNGHEZZA_MASSIMA_NOME);
+
+        assertEquals(nomeMassimo, new Alchimista(nomeMassimo).getNome());
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista(nomeMassimo + "a"));
+    }
+
+    @Test
     void leAzioniNonSiPossonoModificareDaFuori() {
-        Alchimista alchimista = new Alchimista("Apprendista");
+        Alchimista alchimista = new Alchimista("Allievo");
 
         assertThrows(UnsupportedOperationException.class,
                 () -> alchimista.getAzioni().add(new Distillazione()));

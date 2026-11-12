@@ -52,6 +52,20 @@ class CombattimentoTest {
     }
 
     @Test
+    void leStatisticheContanoLaVitaPersaDavveroEIReagentiSpesi() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(30, DANNO_MORSO));
+
+        scontro.turnoAlchimista(mossa("Fiala Ardente"));
+        scontro.turnoAlchimista(mossa("Fiala Ardente"));
+
+        assertTrue(scontro.isVinto());
+        assertEquals(2, scontro.getTurni());
+        assertEquals(30, scontro.getDannoInflitto());
+        assertEquals(DANNO_MORSO, scontro.getDannoSubito());
+        assertEquals(8, scontro.getReagentiSpesi());
+    }
+
+    @Test
     void lElementoDelNemicoSiScopreDopoLaSuaPrimaMossa() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(30, DANNO_MORSO));
         assertFalse(scontro.isElementoNemicoRivelato());

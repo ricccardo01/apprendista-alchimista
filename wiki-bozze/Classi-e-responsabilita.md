@@ -37,6 +37,8 @@ Il metodo astratto `getAzioni()` restituisce le mosse che il combattente conosce
 
 All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e una formula per ogni principio (Fiala Ardente di Zolfo, Nebbia Mercuriale di Mercurio, Polvere Cristallizzante di Sale). Le tre formule costano 4 reagenti e fanno 10 di danno. Avendo un elemento per tipo, posso sfruttare il vantaggio contro qualsiasi nemico fin dal primo piano.
 
+Il nome lo sceglie chi gioca e deve avere da 1 a 10 caratteri. Il controllo è nel costruttore: un alchimista con un nome vuoto o troppo lungo non viene creato. La grafica impedisce già di scrivere più di 10 caratteri, ma la regola sta nel modello perché vale per qualsiasi interfaccia.
+
 ### `Azione` (interfaccia)
 
 Una mossa che un combattente fa nel suo turno: ha un nome, un costo in reagenti e il metodo `esegui(chi, bersaglio)`. La uso sia per l'alchimista sia per i nemici. Per aggiungere una mossa scrivo una nuova classe che implementa `Azione` e il combattimento la userà senza modifiche.
@@ -90,6 +92,8 @@ All'inizio dello scontro chi gioca non sa di che elemento è il nemico. Lo scopr
 
 Il combattimento scrive nel registro una frase per ogni mossa, per esempio "Verme Cieco usa Morso: 5 danni a Alchimista". Calcolo il danno come differenza tra la vita del bersaglio prima e dopo la mossa, così funziona con qualsiasi azione senza cambiare l'interfaccia `Azione`. La grafica legge il registro con `getRegistro()`, che restituisce una lista non modificabile. Le frasi sono semplici stringhe e non dipendono da JavaFX.
 
+Il combattimento conta anche le statistiche dello scontro, che la grafica mostra alla fine: turni giocati, danni inflitti, danni subiti e reagenti spesi. I danni sono la vita persa davvero: se una fiala da 20 colpisce un nemico che ha solo 10 punti vita, contano 10. Le conto nel modello perché è lì che succedono i colpi, e così posso controllarle con un test.
+
 ### `Zona` (enum)
 
 Le tre zone del laboratorio: Cantine, Laboratorio e Fornace. Ogni zona ha 4 piani. `delPiano(piano)` dice a quale zona appartiene un piano e `posizioneNellaZona(piano)` dice se è il primo, il secondo, il terzo o il quarto piano della zona. Faccio questo conto in un posto solo, così le altre classi non ripetono la divisione.
@@ -126,13 +130,37 @@ La partita riceve l'alchimista e il generatore dal costruttore, invece di crearl
 
 ### `Main`
 
-Avvia l'applicazione JavaFX, crea una partita nuova e apre la finestra con lo scontro del primo piano.
+Avvia l'applicazione JavaFX: apre la finestra e chiede al `Navigatore` di mostrare il menu.
+
+### `Navigatore`
+
+Decide quale schermata mostrare. Le schermate non si conoscono tra loro: ognuna riceve dal navigatore cosa fare quando il giocatore vuole andare avanti (un `Runnable`, oppure un `Consumer<String>` per il menu, che passa il nome scelto). Per esempio, quando si preme "Continua" dopo uno scontro, il navigatore guarda lo stato della partita: se è finita mostra la schermata finale, altrimenti fa scendere l'alchimista al piano dopo e mostra la schermata tra i piani.
+
+La finestra resta sempre la stessa e cambia solo il contenuto (`scena.setRoot(...)`). Per aggiungere una schermata nuova, come il negozio, basta scriverla e collegarla qui, senza toccare le altre.
+
+### `SchermataMenu`
+
+Il titolo del gioco, una casella per il nome dell'alchimista e i pulsanti "Nuova partita" ed "Esci". La casella non accetta più di 10 caratteri; se resta vuota il nome diventa "Alchimista".
+
+### `SchermataTraPiani`
+
+Compare dopo ogni scontro vinto. Dice quale piano è stato superato, quanta vita e quanti reagenti ha recuperato l'alchimista e se sta entrando in una nuova zona. Il recupero lo calcola `Partita`: il navigatore legge la vita prima e dopo il passaggio di piano e passa la differenza alla schermata.
+
+### `SchermataFinale`
+
+Dice se la partita è vinta o persa, e in caso di sconfitta il piano e la zona raggiunti. Il pulsante "Torna al menu" permette di iniziare una nuova partita.
+
+### `Aspetto`
+
+Raccoglie in un posto solo come la grafica mostra le cose del modello: i nomi e i colori degli elementi, i nomi delle zone e gli stili usati da più schermate. Prima colori e nomi erano dentro `SchermataCombattimento`; quando sono serviti anche altrove li ho spostati qui invece di copiarli.
 
 ### `SchermataCombattimento`
 
-Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Sopra la mossa c'è il suo costo in reagenti, e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`).
+Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Nel testo del pulsante c'è il costo della mossa in reagenti, tra parentesi (per esempio "Fiala Ardente (4)"), e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`).
 
 Quando si preme un pulsante, la schermata passa la mossa a `turnoAlchimista` e poi rilegge tutto dal modello: vita, reagenti, registro e se l'elemento del nemico è stato scoperto. Finché non è scoperto il riquadro del nemico ha solo un bordo tratteggiato; dopo prende il colore del suo elemento (Zolfo giallo, Mercurio grigio, Sale azzurrino), e una piccola legenda spiega i colori.
+
+Quando lo scontro finisce, al posto dei pulsanti delle mosse compare un riepilogo: l'esito, le statistiche dello scontro e il pulsante "Continua".
 
 La schermata non contiene regole del gioco. Per fare una versione web o mobile basterebbe riscrivere questa classe, lasciando il modello com'è.
 
@@ -142,13 +170,13 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `CombattenteTest` controlla danni, cure, sconfitta, reagenti, il moltiplicatore dei colpi (anche l'arrotondamento: metà di 5 fa 3) e il metodo `usa`, compreso il caso in cui i reagenti non bastano. Una classe astratta non si può creare, quindi i test usano `CombattenteDiProva`, una piccola sottoclasse che esiste solo nella cartella dei test.
 
-`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le cinque mosse iniziali e che la lista delle mosse non si possa modificare da fuori.
+`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le cinque mosse iniziali, che la lista delle mosse non si possa modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri.
 
 `AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
 
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
 
-`CombattimentoTest` controlla un turno completo con i messaggi del registro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno, quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
+`CombattimentoTest` controlla un turno completo con i messaggi del registro, le statistiche dello scontro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno, quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
 
 `ZonaTest` controlla a quale zona appartengono i piani, la posizione dentro la zona e che i piani fuori dalle zone vengano rifiutati.
 

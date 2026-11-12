@@ -7,8 +7,8 @@ import java.util.Objects;
 
 /**
  * Uno scontro tra l'alchimista e un nemico. Fa rispettare l'ordine dei turni,
- * dice quando lo scontro è finito e tiene un registro di ciò che succede,
- * che la grafica può mostrare al giocatore.
+ * dice quando lo scontro è finito e tiene un registro di ciò che succede
+ * e le statistiche dello scontro, che la grafica può mostrare al giocatore.
  */
 public class Combattimento {
     private static final int REAGENTI_PER_TURNO = 2;
@@ -17,6 +17,10 @@ public class Combattimento {
     private final Nemico nemico;
     private final List<String> registro = new ArrayList<>();
     private boolean elementoNemicoRivelato;
+    private int turni;
+    private int dannoInflitto;
+    private int dannoSubito;
+    private int reagentiSpesi;
 
     /**
      * @param alchimista il personaggio del giocatore
@@ -52,6 +56,34 @@ public class Combattimento {
         return elementoNemicoRivelato;
     }
 
+    /**
+     * @return quanti turni sono stati giocati
+     */
+    public int getTurni() {
+        return turni;
+    }
+
+    /**
+     * @return i punti vita tolti al nemico dall'alchimista
+     */
+    public int getDannoInflitto() {
+        return dannoInflitto;
+    }
+
+    /**
+     * @return i punti vita tolti all'alchimista dal nemico
+     */
+    public int getDannoSubito() {
+        return dannoSubito;
+    }
+
+    /**
+     * @return i reagenti spesi dall'alchimista per pagare le sue mosse
+     */
+    public int getReagentiSpesi() {
+        return reagentiSpesi;
+    }
+
     public boolean isFinito() {
         return alchimista.isSconfitto() || nemico.isSconfitto();
     }
@@ -82,9 +114,11 @@ public class Combattimento {
         if (!alchimista.getAzioni().contains(azione)) {
             throw new IllegalArgumentException("L'alchimista non conosce questa azione");
         }
-        esegui(alchimista, azione, nemico);
+        turni++;
+        reagentiSpesi += azione.getCosto();
+        dannoInflitto += esegui(alchimista, azione, nemico);
         if (!nemico.isSconfitto()) {
-            esegui(nemico, nemico.scegliAzione(), alchimista);
+            dannoSubito += esegui(nemico, nemico.scegliAzione(), alchimista);
             elementoNemicoRivelato = true;
         }
         if (!isFinito()) {
@@ -93,7 +127,12 @@ public class Combattimento {
         }
     }
 
-    private void esegui(Combattente chi, Azione azione, Combattente bersaglio) {
+    /**
+     * Fa usare un'azione e la scrive nel registro.
+     *
+     * @return i punti vita persi dal bersaglio
+     */
+    private int esegui(Combattente chi, Azione azione, Combattente bersaglio) {
         int vitaPrima = bersaglio.getVita();
         chi.usa(azione, bersaglio);
         int danno = vitaPrima - bersaglio.getVita();
@@ -106,5 +145,6 @@ public class Combattimento {
         if (bersaglio.isSconfitto()) {
             registro.add(bersaglio.getNome() + " è sconfitto");
         }
+        return danno;
     }
 }

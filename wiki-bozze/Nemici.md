@@ -34,7 +34,7 @@ Le profondità, vicino alla Camera del Sigillo.
 | Apprendista Corrotto | Mercurio | Un altro allievo del maestro, impazzito per i vapori di mercurio respirati vicino alla fornace. |
 | Mummia di Sale | Sale | Il maestro conservava sotto sale i corpi degli esperimenti più vecchi, vicino alla porta sigillata. |
 
-Nel codice sono tutti oggetti della classe `NemicoComune`: cambiano nome, elemento, vita, reagenti e mosse. Il quarto piano di ogni zona ha invece un guardiano.
+Nel codice sono tutti oggetti della classe `NemicoComune`: cambiano nome, elemento, vita, reagenti e mosse. Il quarto piano di ogni zona sarà del guardiano. Finché non aggiungo i guardiani, lì si incontra uno dei tre nemici comuni della zona, scelto a caso.
 
 Nei primi tre piani di una zona incontro tutti e tre i nemici, ma l'ordine cambia a ogni partita.
 

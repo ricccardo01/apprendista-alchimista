@@ -8,6 +8,7 @@ import it.unicam.cs.mpgc.rpg130759.modello.Elemento;
 import it.unicam.cs.mpgc.rpg130759.modello.Nemico;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -26,9 +27,10 @@ import java.util.Objects;
  * Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro
  * a destra e un pulsante per ogni mossa. Non contiene regole del gioco:
  * passa la mossa scelta al combattimento e poi rilegge lo stato dal modello.
+ * A scontro finito compare il pulsante per andare avanti.
  */
 public class SchermataCombattimento {
-    private static final int SPAZIO = 12;
+    private static final int SPAZIO = Aspetto.SPAZIO;
     private static final int LARGHEZZA_REGISTRO = 320;
     private static final int LARGHEZZA_BARRA = 300;
     private static final String STILE_NEMICO_NASCOSTO =
@@ -43,20 +45,27 @@ public class SchermataCombattimento {
     private final ProgressBar vitaAlchimista = new ProgressBar();
     private final Label datiAlchimista = new Label();
     private final ListView<String> registro = new ListView<>();
-    private final Label esito = new Label();
     private final Map<Azione, Button> pulsanti = new LinkedHashMap<>();
+    private final HBox rigaMosse = new HBox(SPAZIO);
+    private final VBox riepilogo = new VBox(SPAZIO / 2);
+    private final Label esito = new Label();
+    private final Label statistiche = new Label();
+    private final Button continua = new Button("Continua");
 
     /**
      * Costruisce la schermata per uno scontro e la mostra nello stato iniziale.
      *
      * @param combattimento lo scontro da mostrare
+     * @param alTermine cosa fare quando, a scontro finito, il giocatore preme "Continua"
      */
-    public SchermataCombattimento(Combattimento combattimento) {
+    public SchermataCombattimento(Combattimento combattimento, Runnable alTermine) {
         this.combattimento = Objects.requireNonNull(combattimento, "Il combattimento è obbligatorio");
+        Objects.requireNonNull(alTermine);
+        continua.setOnAction(evento -> alTermine.run());
         radice.setPadding(new Insets(SPAZIO));
         radice.setCenter(creaCentro());
         radice.setRight(creaRegistro());
-        radice.setBottom(creaPulsanti());
+        radice.setBottom(creaFondo());
         aggiorna();
     }
 
@@ -96,9 +105,9 @@ public class SchermataCombattimento {
         HBox legenda = new HBox(SPAZIO);
         legenda.setAlignment(Pos.CENTER);
         for (Elemento elemento : List.of(Elemento.ZOLFO, Elemento.MERCURIO, Elemento.SALE)) {
-            Label voce = new Label(nomeDi(elemento));
+            Label voce = new Label(Aspetto.nomeDi(elemento));
             voce.setPadding(new Insets(2, 8, 2, 8));
-            voce.setStyle("-fx-background-color: " + coloreDi(elemento) + "; -fx-background-radius: 4;");
+            voce.setStyle("-fx-background-color: " + Aspetto.coloreDi(elemento) + "; -fx-background-radius: 4;");
             legenda.getChildren().add(voce);
         }
         return legenda;
@@ -110,17 +119,24 @@ public class SchermataCombattimento {
         return registro;
     }
 
-    private VBox creaPulsanti() {
-        HBox riga = new HBox(SPAZIO);
-        riga.setAlignment(Pos.CENTER);
+    /**
+     * In fondo ci sono due parti che si alternano: durante lo scontro i pulsanti
+     * delle mosse, a scontro finito il riepilogo con le statistiche e "Continua".
+     */
+    private VBox creaFondo() {
+        rigaMosse.setAlignment(Pos.CENTER);
         for (Azione azione : combattimento.getAlchimista().getAzioni()) {
             Button pulsante = new Button(testoDi(azione));
             pulsante.setOnAction(evento -> scegli(azione));
             pulsanti.put(azione, pulsante);
-            riga.getChildren().add(pulsante);
+            rigaMosse.getChildren().add(pulsante);
         }
-        esito.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        VBox fondo = new VBox(SPAZIO, esito, riga);
+        esito.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        statistiche.setStyle(Aspetto.STILE_TESTO);
+        riepilogo.getChildren().addAll(esito, statistiche, continua);
+        riepilogo.setAlignment(Pos.CENTER);
+
+        VBox fondo = new VBox(rigaMosse, riepilogo);
         fondo.setAlignment(Pos.CENTER);
         fondo.setPadding(new Insets(SPAZIO, 0, 0, 0));
         return fondo;
@@ -145,15 +161,28 @@ public class SchermataCombattimento {
         registro.scrollTo(registro.getItems().size() - 1);
 
         for (Map.Entry<Azione, Button> voce : pulsanti.entrySet()) {
-            boolean pagabile = alchimista.haReagenti(voce.getKey().getCosto());
-            voce.getValue().setDisable(combattimento.isFinito() || !pagabile);
+            voce.getValue().setDisable(!alchimista.haReagenti(voce.getKey().getCosto()));
         }
 
-        if (combattimento.isVinto()) {
-            esito.setText("Hai vinto lo scontro");
-        } else if (combattimento.isFinito()) {
-            esito.setText("Sei stato sconfitto");
+        boolean finito = combattimento.isFinito();
+        mostra(rigaMosse, !finito);
+        mostra(riepilogo, finito);
+        if (finito) {
+            esito.setText(combattimento.isVinto() ? "Hai vinto lo scontro" : "Hai perso lo scontro");
+            statistiche.setText("Turni " + combattimento.getTurni()
+                    + "   Danni inflitti " + combattimento.getDannoInflitto()
+                    + "   Danni subiti " + combattimento.getDannoSubito()
+                    + "   Reagenti spesi " + combattimento.getReagentiSpesi());
         }
+    }
+
+    /**
+     * Mostra o nasconde una parte della schermata; quando è nascosta
+     * non occupa nemmeno spazio, così l'altra parte prende il suo posto.
+     */
+    private static void mostra(Node parte, boolean visibile) {
+        parte.setVisible(visibile);
+        parte.setManaged(visibile);
     }
 
     /**
@@ -163,8 +192,9 @@ public class SchermataCombattimento {
     private void mostraElementoNemico() {
         if (combattimento.isElementoNemicoRivelato()) {
             Elemento elemento = combattimento.getNemico().getElemento();
-            elementoNemico.setText("Elemento: " + nomeDi(elemento));
-            riquadroNemico.setStyle("-fx-background-color: " + coloreDi(elemento) + "; -fx-background-radius: 8;");
+            elementoNemico.setText("Elemento: " + Aspetto.nomeDi(elemento));
+            riquadroNemico.setStyle("-fx-background-color: " + Aspetto.coloreDi(elemento)
+                    + "; -fx-background-radius: 8;");
         } else {
             elementoNemico.setText("Elemento: ?");
             riquadroNemico.setStyle(STILE_NEMICO_NASCOSTO);
@@ -182,23 +212,5 @@ public class SchermataCombattimento {
             return azione.getNome();
         }
         return azione.getNome() + " (" + azione.getCosto() + ")";
-    }
-
-    private static String coloreDi(Elemento elemento) {
-        return switch (elemento) {
-            case ZOLFO -> "#e3c13b";
-            case MERCURIO -> "#b5bac1";
-            case SALE -> "#dcebf2";
-            case NEUTRO -> "#a87b50";
-        };
-    }
-
-    private static String nomeDi(Elemento elemento) {
-        return switch (elemento) {
-            case ZOLFO -> "Zolfo";
-            case MERCURIO -> "Mercurio";
-            case SALE -> "Sale";
-            case NEUTRO -> "Neutro";
-        };
     }
 }
