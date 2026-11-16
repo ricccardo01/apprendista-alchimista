@@ -40,6 +40,26 @@ public class Alchimista extends Combattente {
                 formulaIniziale("Polvere Cristallizzante", Elemento.SALE));
     }
 
+    /**
+     * Ricrea un alchimista con la vita e i reagenti di una partita salvata.
+     *
+     * @param nome il nome scelto dal giocatore
+     * @param vita i punti vita, da 1 alla vita massima
+     * @param reagenti i reagenti, da 0 al massimo
+     * @throws IllegalArgumentException se il nome, la vita o i reagenti non sono validi
+     */
+    public Alchimista(String nome, int vita, int reagenti) {
+        this(nome);
+        if (vita < 1 || vita > getVitaMassima()) {
+            throw new IllegalArgumentException("La vita deve essere tra 1 e " + getVitaMassima());
+        }
+        if (reagenti < 0 || reagenti > getReagentiMassimi()) {
+            throw new IllegalArgumentException("I reagenti devono essere tra 0 e " + getReagentiMassimi());
+        }
+        subisciDanno(getVitaMassima() - vita);
+        consumaReagenti(getReagentiMassimi() - reagenti);
+    }
+
     private static String controllaNome(String nome) {
         Objects.requireNonNull(nome, "Il nome è obbligatorio");
         if (nome.isBlank() || nome.length() > LUNGHEZZA_MASSIMA_NOME) {

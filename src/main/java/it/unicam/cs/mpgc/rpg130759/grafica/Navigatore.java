@@ -34,7 +34,7 @@ public class Navigatore {
     }
 
     private void iniziaPartita(String nome) {
-        partita = new Partita(new Alchimista(nome), new GeneratoreNemiciPerZona(new Random()));
+        partita = new Partita(new Alchimista(nome), new GeneratoreNemiciPerZona(new Random().nextLong()));
         mostraCombattimento();
     }
 

@@ -39,6 +39,8 @@ All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e u
 
 Il nome lo sceglie chi gioca e deve avere da 1 a 10 caratteri. Il controllo è nel costruttore: un alchimista con un nome vuoto o troppo lungo non viene creato. La grafica impedisce già di scrivere più di 10 caratteri, ma la regola sta nel modello perché vale per qualsiasi interfaccia.
 
+Un secondo costruttore ricrea l'alchimista con la vita e i reagenti di una partita salvata. Anche qui controllo i valori: con la vita a 0, oppure con più vita o più reagenti del massimo, l'alchimista non viene creato.
+
 ### `Azione` (interfaccia)
 
 Una mossa che un combattente fa nel suo turno: ha un nome, un costo in reagenti e il metodo `esegui(chi, bersaglio)`. La uso sia per l'alchimista sia per i nemici. Per aggiungere una mossa scrivo una nuova classe che implementa `Azione` e il combattimento la userà senza modifiche.
@@ -102,7 +104,9 @@ Calcolo l'ultimo piano moltiplicando il numero delle zone per i piani di ogni zo
 
 ### `GeneratoreNemici` (interfaccia)
 
-Ha un solo metodo, `creaNemico(piano)`, che restituisce il nemico di un piano. `Partita` conosce solo questa interfaccia e non sa come nascono i nemici. Se voglio regole diverse (un'altra zona, una modalità più difficile) scrivo una nuova implementazione e passo quella alla partita, senza modificare `Partita`. Lo stesso vale nei test: gli passo un generatore di prova che crea nemici prevedibili.
+`creaNemico(piano)` restituisce il nemico di un piano. `Partita` conosce solo questa interfaccia e non sa come nascono i nemici. Se voglio regole diverse (un'altra zona, una modalità più difficile) scrivo una nuova implementazione e passo quella alla partita, senza modificare `Partita`. Lo stesso vale nei test: gli passo un generatore di prova che crea nemici prevedibili.
+
+`getSeme()` restituisce il seme, il numero da cui dipendono le scelte casuali del generatore. Con lo stesso seme il generatore propone gli stessi nemici negli stessi piani. Mi serve per ricreare la partita dopo un caricamento.
 
 ### `GeneratoreNemiciPerZona`
 
@@ -110,7 +114,7 @@ Contiene i numeri e le mosse dei nove nemici comuni. Ogni nemico ha una mossa gr
 
 Nei primi tre piani di ogni zona incontro tutti e tre i nemici della zona, uno per principio, ma in un ordine diverso a ogni partita. Ho scelto così per avere partite più varie: in ogni zona devo usare tutti e tre gli elementi. Per farlo, all'inizio della partita il generatore mescola la lista dei tre principi di ogni zona con `Collections.shuffle` e la salva in una `EnumMap`, una mappa che ha come chiavi i valori di un enum. Per ora anche il quarto piano di ogni zona ha un nemico comune, scelto a caso. Lì arriveranno i guardiani.
 
-Ricevo il `Random` dal costruttore, come in `NemicoComune`, così nei test posso usare un seme fisso.
+Il generatore riceve il seme dal costruttore e crea da lì il suo `Random`. Il seme risolve due problemi. Nei test posso usare un seme fisso e il risultato si ripete uguale. Quando carico una partita, ricreo il generatore con il seme salvato: le zone vengono mescolate nello stesso ordine di prima e non ritrovo un nemico che avevo già sconfitto.
 
 ### `StatoPartita` (enum)
 
@@ -124,7 +128,25 @@ Tiene insieme la partita intera: l'alchimista, il piano attuale e lo scontro in 
 
 `getStato()` restituisce PERSA se l'alchimista è sconfitto e VINTA se ha battuto il nemico dell'ultimo piano. Per ora l'ultimo piano è il 12. Quando aggiungerò la Camera del Sigillo, la vittoria arriverà al piano 13.
 
-La partita riceve l'alchimista e il generatore dal costruttore, invece di crearli lei. Così dipende da un'interfaccia e non da una classe concreta (principio di inversione delle dipendenze), e quando caricherò un salvataggio potrò passarle un alchimista già esistente.
+La partita riceve l'alchimista e il generatore dal costruttore, invece di crearli lei. Così dipende da un'interfaccia e non da una classe concreta (principio di inversione delle dipendenze). Per il caricamento le passo un alchimista ricreato dai dati salvati.
+
+Un secondo costruttore riceve anche il piano: lo uso per riprendere una partita salvata dall'inizio dello scontro di quel piano. `getSeme()` chiede il seme al generatore, così la persistenza lo può salvare senza sapere quale generatore usa la partita.
+
+## Package `persistenza`
+
+Come salvo la partita lo spiego nella pagina [Persistenza](Persistenza). Qui scrivo solo le responsabilità.
+
+### `GestoreSalvataggi` (interfaccia)
+
+Salva e carica la partita con due metodi, `salva(partita)` e `carica()`. La grafica conoscerà solo questa interfaccia. Per salvare in un altro modo, per esempio su un server per una versione web, scrivo un'altra implementazione e la grafica resta com'è.
+
+### `DatiPartita` (record)
+
+La fotocopia della partita che finisce nel file: nome, vita e reagenti dell'alchimista, piano e seme. Un `record` è una classe di soli dati che Java scrive per me (costruttore, metodi per leggere i campi, `equals`). L'ho usato perché `DatiPartita` non ha regole. Sa copiare i dati da una partita (`da`) e ricreare la partita dai dati (`creaPartita`). È visibile solo dentro il package `persistenza`: il resto del programma non sa che esiste.
+
+### `SalvataggioJson`
+
+Implementa `GestoreSalvataggi` con un file JSON, scritto e letto con la libreria Gson. Il file sta nella cartella dell'utente, in `.apprendista-alchimista/salvataggio.json`, così funziona su Windows, macOS e Linux. Nei test passo al costruttore un file in una cartella temporanea.
 
 ## Package `grafica`
 
@@ -170,7 +192,7 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `CombattenteTest` controlla danni, cure, sconfitta, reagenti, il moltiplicatore dei colpi (anche l'arrotondamento: metà di 5 fa 3) e il metodo `usa`, compreso il caso in cui i reagenti non bastano. Una classe astratta non si può creare, quindi i test usano `CombattenteDiProva`, una piccola sottoclasse che esiste solo nella cartella dei test.
 
-`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le cinque mosse iniziali, che la lista delle mosse non si possa modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri.
+`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le cinque mosse iniziali, che la lista delle mosse non si possa modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri. Controlla anche il costruttore per i salvataggi: ricrea vita e reagenti e rifiuta valori impossibili.
 
 `AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
 
@@ -180,6 +202,8 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `ZonaTest` controlla a quale zona appartengono i piani, la posizione dentro la zona e che i piani fuori dalle zone vengano rifiutati.
 
-`GeneratoreNemiciPerZonaTest` prova 20 semi diversi e controlla ogni volta che nei primi tre piani di ogni zona escano tutti e tre i principi. Controlla anche che ogni volta nasca un nemico nuovo con la vita piena e che i nemici della Fornace abbiano più vita di quelli delle Cantine.
+`GeneratoreNemiciPerZonaTest` prova 20 semi diversi e controlla ogni volta che nei primi tre piani di ogni zona escano tutti e tre i principi. Controlla anche che ogni volta nasca un nemico nuovo con la vita piena, che i nemici della Fornace abbiano più vita di quelli delle Cantine e che due generatori con lo stesso seme propongano gli stessi nemici in tutti i piani.
 
-`PartitaTest` usa due generatori di prova scritti come lambda: uno crea nemici che cadono al primo colpo, l'altro nemici imbattibili. Controlla l'inizio della partita, che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), la vittoria all'ultimo piano e la sconfitta.
+`PartitaTest` usa `GeneratoreDiProva`, una piccola classe che crea sempre lo stesso nemico: in un test cade al primo colpo, in un altro è imbattibile. Prima i generatori di prova erano lambda; da quando l'interfaccia ha anche `getSeme()` una lambda non basta più. Il test controlla l'inizio della partita, la ripresa da un piano qualsiasi (e il rifiuto dei piani che non esistono), che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), la vittoria all'ultimo piano e la sconfitta.
+
+`SalvataggioJsonTest` scrive in una cartella temporanea che JUnit crea e cancella da solo (`@TempDir`). Controlla che una partita salvata si ricarichi uguale, con lo stesso nemico al suo piano, che un nuovo salvataggio sostituisca il vecchio e che la cartella venga creata se manca. Controlla anche i casi senza salvataggio valido: file assente, vuoto, rovinato, senza nome o con valori impossibili.

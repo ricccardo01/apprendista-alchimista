@@ -14,4 +14,13 @@ public interface GeneratoreNemici {
      * @return il nemico del piano
      */
     Nemico creaNemico(int piano);
+
+    /**
+     * Il numero da cui dipendono le scelte casuali del generatore: un generatore
+     * creato con lo stesso seme propone gli stessi nemici negli stessi piani.
+     * Serve a ricreare la partita uguale dopo un caricamento.
+     *
+     * @return il seme del generatore
+     */
+    long getSeme();
 }

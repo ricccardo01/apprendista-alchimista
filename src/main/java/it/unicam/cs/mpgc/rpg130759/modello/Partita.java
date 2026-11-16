@@ -22,9 +22,25 @@ public class Partita {
      * @param generatore chi decide i nemici dei piani
      */
     public Partita(Alchimista alchimista, GeneratoreNemici generatore) {
+        this(alchimista, generatore, 1);
+    }
+
+    /**
+     * Riprende una partita da un certo piano, con lo scontro del piano appena iniziato.
+     * Serve per continuare una partita salvata.
+     *
+     * @param alchimista il personaggio del giocatore
+     * @param generatore chi decide i nemici dei piani
+     * @param piano il piano da cui riprendere, da 1 a {@link Zona#ULTIMO_PIANO}
+     * @throws IllegalArgumentException se il piano non esiste
+     */
+    public Partita(Alchimista alchimista, GeneratoreNemici generatore, int piano) {
         this.alchimista = Objects.requireNonNull(alchimista, "L'alchimista è obbligatorio");
         this.generatore = Objects.requireNonNull(generatore, "Il generatore di nemici è obbligatorio");
-        this.piano = 1;
+        if (piano < 1 || piano > Zona.ULTIMO_PIANO) {
+            throw new IllegalArgumentException("Il piano deve essere tra 1 e " + Zona.ULTIMO_PIANO);
+        }
+        this.piano = piano;
         this.combattimento = new Combattimento(alchimista, generatore.creaNemico(piano));
     }
 
@@ -34,6 +50,13 @@ public class Partita {
 
     public int getPiano() {
         return piano;
+    }
+
+    /**
+     * @return il seme del generatore dei nemici, da salvare per ricreare la partita uguale
+     */
+    public long getSeme() {
+        return generatore.getSeme();
     }
 
     public Zona getZona() {

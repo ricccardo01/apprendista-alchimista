@@ -21,5 +21,6 @@ Ho scelto questa divisione perché così la logica del gioco si potrebbe riusare
 - Java 25
 - Gradle (con Gradle Wrapper) per compilare ed eseguire il progetto
 - JavaFX per l'interfaccia grafica
+- Gson per scrivere e leggere il salvataggio in formato JSON
 - JUnit per i test
 - Git e GitHub per il controllo di versione

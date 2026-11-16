@@ -59,4 +59,21 @@ class AlchimistaTest {
         assertThrows(UnsupportedOperationException.class,
                 () -> alchimista.getAzioni().add(new Distillazione()));
     }
+
+    @Test
+    void siRicreaConLaVitaEIReagentiSalvati() {
+        Alchimista alchimista = new Alchimista("Allievo", 63, 7);
+
+        assertEquals("Allievo", alchimista.getNome());
+        assertEquals(63, alchimista.getVita());
+        assertEquals(7, alchimista.getReagenti());
+    }
+
+    @Test
+    void rifiutaVitaOReagentiImpossibili() {
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista("Allievo", 0, 5));
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista("Allievo", 500, 5));
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista("Allievo", 50, -1));
+        assertThrows(IllegalArgumentException.class, () -> new Alchimista("Allievo", 50, 500));
+    }
 }

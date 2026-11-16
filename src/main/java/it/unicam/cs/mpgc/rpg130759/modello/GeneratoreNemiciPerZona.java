@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -21,21 +20,30 @@ public class GeneratoreNemiciPerZona implements GeneratoreNemici {
     private static final int REAGENTI_NEMICO = 10;
     private static final int COSTO_MOSSA_FORTE = 6;
 
+    private final long seme;
     private final Random caso;
     private final Map<Zona, List<Elemento>> ordinePerZona = new EnumMap<>(Zona.class);
 
     /**
-     * Mescola subito l'ordine dei nemici di ogni zona.
+     * Mescola subito l'ordine dei nemici di ogni zona. Con lo stesso seme
+     * l'ordine è sempre lo stesso: così una partita caricata ritrova i nemici
+     * che le mancavano e non quelli già sconfitti.
      *
-     * @param caso il generatore di numeri casuali, usato anche dai nemici per scegliere le mosse
+     * @param seme il numero da cui nasce il generatore casuale, usato anche dai nemici per scegliere le mosse
      */
-    public GeneratoreNemiciPerZona(Random caso) {
-        this.caso = Objects.requireNonNull(caso, "Il generatore casuale è obbligatorio");
+    public GeneratoreNemiciPerZona(long seme) {
+        this.seme = seme;
+        this.caso = new Random(seme);
         for (Zona zona : Zona.values()) {
             List<Elemento> ordine = new ArrayList<>(PRINCIPI);
             Collections.shuffle(ordine, caso);
             ordinePerZona.put(zona, ordine);
         }
+    }
+
+    @Override
+    public long getSeme() {
+        return seme;
     }
 
     /**
