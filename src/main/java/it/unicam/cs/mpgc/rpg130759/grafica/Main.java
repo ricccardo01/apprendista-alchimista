@@ -1,5 +1,6 @@
 package it.unicam.cs.mpgc.rpg130759.grafica;
 
+import it.unicam.cs.mpgc.rpg130759.persistenza.SalvataggioJson;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -15,6 +16,7 @@ public class Main extends Application {
 
     /**
      * Crea la finestra e affida al navigatore il cambio delle schermate.
+     * Qui si sceglie come salvare: per cambiare formato basta passare un altro gestore.
      *
      * @param finestra la finestra fornita da JavaFX all'avvio
      */
@@ -23,7 +25,7 @@ public class Main extends Application {
         finestra.setTitle("L'Apprendista Alchimista");
         // La scena nasce con un contenuto vuoto, che il navigatore sostituisce subito con il menu.
         Scene scena = new Scene(new Pane(), LARGHEZZA, ALTEZZA);
-        new Navigatore(scena).mostraMenu();
+        new Navigatore(scena, new SalvataggioJson()).mostraMenu();
         finestra.setScene(scena);
         finestra.show();
     }

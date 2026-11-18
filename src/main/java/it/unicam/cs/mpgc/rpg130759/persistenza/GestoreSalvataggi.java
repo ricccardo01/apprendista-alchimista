@@ -28,4 +28,12 @@ public interface GestoreSalvataggi {
      *         o se il salvataggio non si può leggere
      */
     Optional<Partita> carica();
+
+    /**
+     * Cancella il salvataggio, per esempio quando la partita è finita.
+     * Se non c'è nessun salvataggio non fa niente.
+     *
+     * @throws java.io.UncheckedIOException se il salvataggio esiste ma non si può cancellare
+     */
+    void cancella();
 }

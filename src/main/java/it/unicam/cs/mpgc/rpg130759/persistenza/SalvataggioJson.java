@@ -68,4 +68,13 @@ public class SalvataggioJson implements GestoreSalvataggi {
             return Optional.empty();
         }
     }
+
+    @Override
+    public void cancella() {
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Impossibile cancellare il salvataggio", e);
+        }
+    }
 }

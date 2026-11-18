@@ -1,6 +1,8 @@
 package it.unicam.cs.mpgc.rpg130759.persistenza;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import it.unicam.cs.mpgc.rpg130759.modello.Alchimista;
@@ -101,5 +103,21 @@ class SalvataggioJsonTest {
 
         Files.writeString(file(), "{\"vita\": 50, \"reagenti\": 5, \"piano\": 3, \"seme\": 1}");
         assertTrue(salvataggio.carica().isEmpty());
+    }
+
+    @Test
+    void dopoLaCancellazioneNonCeNessunSalvataggio() {
+        SalvataggioJson salvataggio = new SalvataggioJson(file());
+        salvataggio.salva(new Partita(new Alchimista("Mira"), new GeneratoreNemiciPerZona(1)));
+
+        salvataggio.cancella();
+
+        assertTrue(salvataggio.carica().isEmpty());
+        assertFalse(Files.exists(file()));
+    }
+
+    @Test
+    void cancellareSenzaSalvataggioNonDaErrore() {
+        assertDoesNotThrow(() -> new SalvataggioJson(file()).cancella());
     }
 }

@@ -138,7 +138,7 @@ Come salvo la partita lo spiego nella pagina [Persistenza](Persistenza). Qui scr
 
 ### `GestoreSalvataggi` (interfaccia)
 
-Salva e carica la partita con due metodi, `salva(partita)` e `carica()`. La grafica conoscerà solo questa interfaccia. Per salvare in un altro modo, per esempio su un server per una versione web, scrivo un'altra implementazione e la grafica resta com'è.
+Salva, carica e cancella la partita con tre metodi: `salva(partita)`, `carica()` e `cancella()`. La grafica conosce solo questa interfaccia: l'unico punto che sceglie il file JSON è `Main`. Per salvare in un altro modo, per esempio su un server per una versione web, scrivo un'altra implementazione e la grafica resta com'è.
 
 ### `DatiPartita` (record)
 
@@ -152,17 +152,19 @@ Implementa `GestoreSalvataggi` con un file JSON, scritto e letto con la libreria
 
 ### `Main`
 
-Avvia l'applicazione JavaFX: apre la finestra e chiede al `Navigatore` di mostrare il menu.
+Avvia l'applicazione JavaFX: apre la finestra, crea il gestore dei salvataggi (`SalvataggioJson`) e lo passa al `Navigatore`, poi gli chiede di mostrare il menu. Per salvare in un altro modo cambierei solo questa riga.
 
 ### `Navigatore`
 
 Decide quale schermata mostrare. Le schermate non si conoscono tra loro: ognuna riceve dal navigatore cosa fare quando il giocatore vuole andare avanti (un `Runnable`, oppure un `Consumer<String>` per il menu, che passa il nome scelto). Per esempio, quando si preme "Continua" dopo uno scontro, il navigatore guarda lo stato della partita: se è finita mostra la schermata finale, altrimenti fa scendere l'alchimista al piano dopo e mostra la schermata tra i piani.
 
+Decide anche quando salvare: quando inizia una partita nuova e ogni volta che l'alchimista scende di piano. Appena uno scontro chiude la partita (vinta o persa) cancella il salvataggio, già prima che il giocatore prema "Continua": così chiudere la finestra dopo una sconfitta non permette di riprovare il piano. Se il file non si riesce a scrivere, mostra un avviso e il gioco va avanti.
+
 La finestra resta sempre la stessa e cambia solo il contenuto (`scena.setRoot(...)`). Per aggiungere una schermata nuova, come il negozio, basta scriverla e collegarla qui, senza toccare le altre.
 
 ### `SchermataMenu`
 
-Il titolo del gioco, una casella per il nome dell'alchimista e i pulsanti "Nuova partita" ed "Esci". La casella non accetta più di 10 caratteri; se resta vuota il nome diventa "Alchimista".
+Il titolo del gioco, una casella per il nome dell'alchimista e i pulsanti "Nuova partita" ed "Esci". Se c'è una partita salvata compare anche "Continua", con il nome dell'alchimista e il piano (per esempio "Continua: Mira, piano 5"). "Nuova partita" sostituisce il salvataggio precedente. La casella non accetta più di 10 caratteri; se resta vuota il nome diventa "Alchimista".
 
 ### `SchermataTraPiani`
 
@@ -182,7 +184,7 @@ Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei me
 
 Quando si preme un pulsante, la schermata passa la mossa a `turnoAlchimista` e poi rilegge tutto dal modello: vita, reagenti, registro e se l'elemento del nemico è stato scoperto. Finché non è scoperto il riquadro del nemico ha solo un bordo tratteggiato; dopo prende il colore del suo elemento (Zolfo giallo, Mercurio grigio, Sale azzurrino), e una piccola legenda spiega i colori.
 
-Quando lo scontro finisce, al posto dei pulsanti delle mosse compare un riepilogo: l'esito, le statistiche dello scontro e il pulsante "Continua".
+Quando lo scontro finisce, al posto dei pulsanti delle mosse compare un riepilogo: l'esito, le statistiche dello scontro e il pulsante "Continua". La schermata riceve dal navigatore due azioni: una parte appena lo scontro finisce (serve a cancellare il salvataggio se la partita è finita), l'altra quando si preme "Continua".
 
 La schermata non contiene regole del gioco. Per fare una versione web o mobile basterebbe riscrivere questa classe, lasciando il modello com'è.
 
@@ -206,4 +208,4 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `PartitaTest` usa `GeneratoreDiProva`, una piccola classe che crea sempre lo stesso nemico: in un test cade al primo colpo, in un altro è imbattibile. Prima i generatori di prova erano lambda; da quando l'interfaccia ha anche `getSeme()` una lambda non basta più. Il test controlla l'inizio della partita, la ripresa da un piano qualsiasi (e il rifiuto dei piani che non esistono), che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), la vittoria all'ultimo piano e la sconfitta.
 
-`SalvataggioJsonTest` scrive in una cartella temporanea che JUnit crea e cancella da solo (`@TempDir`). Controlla che una partita salvata si ricarichi uguale, con lo stesso nemico al suo piano, che un nuovo salvataggio sostituisca il vecchio e che la cartella venga creata se manca. Controlla anche i casi senza salvataggio valido: file assente, vuoto, rovinato, senza nome o con valori impossibili.
+`SalvataggioJsonTest` scrive in una cartella temporanea che JUnit crea e cancella da solo (`@TempDir`). Controlla che una partita salvata si ricarichi uguale, con lo stesso nemico al suo piano, che un nuovo salvataggio sostituisca il vecchio, che la cartella venga creata se manca e che dopo `cancella()` non resti niente da caricare (cancellare quando non c'è nessun salvataggio non dà errore). Controlla anche i casi senza salvataggio valido: file assente, vuoto, rovinato, senza nome o con valori impossibili.

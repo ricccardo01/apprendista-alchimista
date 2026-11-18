@@ -37,6 +37,7 @@ public class SchermataCombattimento {
             "-fx-border-color: #888888; -fx-border-style: dashed; -fx-border-radius: 8;";
 
     private final Combattimento combattimento;
+    private final Runnable allaFine;
     private final BorderPane radice = new BorderPane();
     private final VBox riquadroNemico = new VBox(SPAZIO / 2);
     private final ProgressBar vitaNemico = new ProgressBar();
@@ -56,10 +57,12 @@ public class SchermataCombattimento {
      * Costruisce la schermata per uno scontro e la mostra nello stato iniziale.
      *
      * @param combattimento lo scontro da mostrare
+     * @param allaFine cosa fare appena lo scontro finisce, prima che il giocatore prema "Continua"
      * @param alTermine cosa fare quando, a scontro finito, il giocatore preme "Continua"
      */
-    public SchermataCombattimento(Combattimento combattimento, Runnable alTermine) {
+    public SchermataCombattimento(Combattimento combattimento, Runnable allaFine, Runnable alTermine) {
         this.combattimento = Objects.requireNonNull(combattimento, "Il combattimento è obbligatorio");
+        this.allaFine = Objects.requireNonNull(allaFine);
         Objects.requireNonNull(alTermine);
         continua.setOnAction(evento -> alTermine.run());
         radice.setPadding(new Insets(SPAZIO));
@@ -144,6 +147,9 @@ public class SchermataCombattimento {
 
     private void scegli(Azione azione) {
         combattimento.turnoAlchimista(azione);
+        if (combattimento.isFinito()) {
+            allaFine.run();
+        }
         aggiorna();
     }
 
