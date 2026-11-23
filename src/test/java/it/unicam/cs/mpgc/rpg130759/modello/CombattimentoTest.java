@@ -62,7 +62,7 @@ class CombattimentoTest {
         assertEquals(2, scontro.getTurni());
         assertEquals(30, scontro.getDannoInflitto());
         assertEquals(DANNO_MORSO, scontro.getDannoSubito());
-        assertEquals(8, scontro.getReagentiSpesi());
+        assertEquals(10, scontro.getReagentiSpesi());
     }
 
     @Test
@@ -145,7 +145,7 @@ class CombattimentoTest {
     }
 
     @Test
-    void aFineTurnoEntrambiRecuperanoReagenti() {
+    void aFineTurnoSoloIlNemicoRecuperaReagenti() {
         NemicoComune verme = vermeCieco(30, DANNO_MORSO);
         Combattimento scontro = new Combattimento(alchimista, verme);
         alchimista.consumaReagenti(10);
@@ -153,8 +153,106 @@ class CombattimentoTest {
 
         scontro.turnoAlchimista(attaccoBase());
 
-        assertEquals(12, alchimista.getReagenti());
+        assertEquals(10, alchimista.getReagenti());
         assertEquals(2, verme.getReagenti());
+    }
+
+    @Test
+    void laDistillazioneSiUsaAlMassimoDueVoltePerScontro() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+        Azione distillazione = mossa("Distillazione");
+        assertEquals(2, scontro.getUsiRimasti(distillazione));
+
+        scontro.turnoAlchimista(distillazione);
+        scontro.turnoAlchimista(distillazione);
+
+        assertEquals(0, scontro.getUsiRimasti(distillazione));
+        assertFalse(scontro.puoUsare(distillazione));
+        assertThrows(IllegalStateException.class, () -> scontro.turnoAlchimista(distillazione));
+        assertEquals(2, scontro.getTurni());
+    }
+
+    @Test
+    void gliUsiDellaDistillazioneRipartonoInUnNuovoScontro() {
+        Combattimento primo = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+        primo.turnoAlchimista(mossa("Distillazione"));
+        primo.turnoAlchimista(mossa("Distillazione"));
+
+        Combattimento secondo = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        assertTrue(secondo.puoUsare(mossa("Distillazione")));
+    }
+
+    @Test
+    void leMosseSenzaLimiteNonFinisconoMai() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        scontro.turnoAlchimista(attaccoBase());
+
+        assertEquals(Azione.SENZA_LIMITE, scontro.getUsiRimasti(attaccoBase()));
+    }
+
+    @Test
+    void ilNemicoPietrificatoSaltaIlTurnoELElementoRestaNascosto() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        scontro.turnoAlchimista(mossa("Cristalli Pietrificanti"));
+
+        assertEquals(100, alchimista.getVita());
+        assertEquals("Verme Cieco è bloccato e salta il turno", scontro.getRegistro().get(1));
+        assertFalse(scontro.isElementoNemicoRivelato());
+        assertTrue(scontro.getNemico().puoAgire());
+    }
+
+    @Test
+    void ilVelenoAgisceAFineTurnoEContaTraIDanniInflitti() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        scontro.turnoAlchimista(mossa("Veleno Sulfureo"));
+
+        assertEquals(88, scontro.getNemico().getVita());
+        assertEquals(12, scontro.getDannoInflitto());
+        assertEquals("Verme Cieco perde 4 punti vita a fine turno", scontro.getRegistro().get(2));
+    }
+
+    @Test
+    void seIlVelenoSconfiggeIlNemicoLoScontroEVinto() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(12, DANNO_MORSO));
+
+        scontro.turnoAlchimista(mossa("Veleno Sulfureo"));
+
+        assertTrue(scontro.isVinto());
+        assertEquals("Verme Cieco è sconfitto", scontro.getRegistro().get(3));
+    }
+
+    @Test
+    void seLAlchimistaCadeIlVelenoNonFaInTempoAdAgire() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(10, 200));
+
+        scontro.turnoAlchimista(mossa("Veleno Sulfureo"));
+
+        assertEquals(2, scontro.getNemico().getVita());
+        assertTrue(scontro.isFinito());
+        assertFalse(scontro.isVinto());
+    }
+
+    @Test
+    void laCorazzaProteggeGiaDallaRispostaDelNemico() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, 10));
+
+        scontro.turnoAlchimista(mossa("Corazza di Sale"));
+
+        assertEquals(95, alchimista.getVita());
+    }
+
+    @Test
+    void ilCatalizzatoreRaddoppiaIlColpoDelTurnoDopo() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        scontro.turnoAlchimista(mossa("Catalizzatore"));
+        scontro.turnoAlchimista(mossa("Fiala Ardente"));
+
+        assertEquals(60, scontro.getNemico().getVita());
     }
 
     @Test

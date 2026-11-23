@@ -27,7 +27,7 @@ class AlchimistaTest {
     }
 
     @Test
-    void conosceAttaccoDistillazioneEUnaFormulaPerOgniPrincipio() {
+    void conosceAttaccoDistillazioneUnaFormulaPerOgniPrincipioELeFormuleConEffetti() {
         Alchimista alchimista = new Alchimista("Allievo");
         List<String> nomi = new ArrayList<>();
         for (Azione azione : alchimista.getAzioni()) {
@@ -35,7 +35,8 @@ class AlchimistaTest {
         }
 
         assertEquals(List.of("Attacco con Pestello di Legno", "Distillazione", "Fiala Ardente",
-                "Nebbia Mercuriale", "Polvere Cristallizzante"), nomi);
+                "Nebbia Mercuriale", "Polvere Cristallizzante", "Veleno Sulfureo",
+                "Cristalli Pietrificanti", "Corazza di Sale", "Catalizzatore"), nomi);
     }
 
     @Test

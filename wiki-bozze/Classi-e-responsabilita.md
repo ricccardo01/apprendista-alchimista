@@ -29,13 +29,22 @@ Due metodi collegano il combattente alle azioni:
 - `subisciColpo(danno, elemento)` applica il moltiplicatore tra l'elemento del colpo e quello del combattente, poi toglie la vita. Tengo il calcolo qui e le azioni non lo ripetono.
 - `usa(azione, bersaglio)` paga il costo dell'azione e poi la esegue. Se i reagenti non bastano lancia un'eccezione e non succede niente, quindi la grafica dovrà chiedere prima `haReagenti`.
 
+Il combattente tiene anche la lista degli effetti che ha addosso (`getEffetti()`, non modificabile da fuori). `aggiungiEffetto` sostituisce un effetto con lo stesso nome invece di sommarlo: due Veleni non fanno il doppio, il secondo fa solo ricominciare il conto dei turni. Gli effetti entrano in gioco in quattro punti, e il combattente chiede a ognuno se vuole cambiare qualcosa:
+
+- in `subisciColpo`, dopo il moltiplicatore dell'elemento (Corazza di Sale);
+- in `potenziaDanno`, che le azioni chiamano prima di colpire (Catalizzatore);
+- in `applicaEffettiDiFineTurno`, che il combattimento chiama alla fine di ogni turno (Veleno);
+- in `puoAgire`, che dice se un effetto blocca la mossa (Pietrificazione).
+
 Il metodo astratto `getAzioni()` restituisce le mosse che il combattente conosce. Lo dichiaro qui ma non lo scrivo: l'alchimista e i nemici prendono le mosse da posti diversi, quindi ogni sottoclasse lo scrive a modo suo. Il combattimento potrà chiedere le mosse a qualsiasi combattente senza sapere di che tipo è. La lista che restituisco non si può modificare da fuori, così nessuno aggiunge mosse di nascosto.
 
 ### `Alchimista`
 
 È il personaggio del giocatore. Eredita da `Combattente` vita e reagenti e aggiunge lo strumento che impugna. Comincia con il Pestello di Legno, elemento Neutro, 100 di vita e 20 reagenti. Con l'elemento Neutro subisce danno normale da tutti i principi. I numeri sono provvisori e li rivedrò nel bilanciamento.
 
-All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e una formula per ogni principio (Fiala Ardente di Zolfo, Nebbia Mercuriale di Mercurio, Polvere Cristallizzante di Sale). Le tre formule costano 4 reagenti e fanno 10 di danno. Avendo un elemento per tipo, posso sfruttare il vantaggio contro qualsiasi nemico fin dal primo piano.
+All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e una formula per ogni principio (Fiala Ardente di Zolfo, Nebbia Mercuriale di Mercurio, Polvere Cristallizzante di Sale). Le tre formule costano 5 reagenti e fanno 10 di danno. Avendo un elemento per tipo, posso sfruttare il vantaggio contro qualsiasi nemico fin dal primo piano.
+
+Per ora l'alchimista conosce fin dall'inizio anche le quattro formule con effetti: Veleno Sulfureo, Cristalli Pietrificanti, Corazza di Sale e Catalizzatore. È una soluzione provvisoria per poterle provare giocando. Quando aggiungerò i livelli, partirà con le tre formule iniziali e imparerà le altre salendo di livello.
 
 Il nome lo sceglie chi gioca e deve avere da 1 a 10 caratteri. Il controllo è nel costruttore: un alchimista con un nome vuoto o troppo lungo non viene creato. La grafica impedisce già di scrivere più di 10 caratteri, ma la regola sta nel modello perché vale per qualsiasi interfaccia.
 
@@ -46,6 +55,8 @@ Un secondo costruttore ricrea l'alchimista con la vita e i reagenti di una parti
 Una mossa che un combattente fa nel suo turno: ha un nome, un costo in reagenti e il metodo `esegui(chi, bersaglio)`. La uso sia per l'alchimista sia per i nemici. Per aggiungere una mossa scrivo una nuova classe che implementa `Azione` e il combattimento la userà senza modifiche.
 
 `esegui` non paga il costo: lo paga `Combattente.usa`. Così ogni azione si occupa solo del suo effetto e non devo ripetere il pagamento in ogni classe.
+
+`getUsiPerScontro()` dice quante volte l'azione si può usare in uno scontro. È un metodo `default`, cioè ha già un corpo nell'interfaccia: restituisce `SENZA_LIMITE` e le azioni senza limite non devono scriverlo. Solo chi ha un limite lo riscrive, per ora la Distillazione. Così ho aggiunto il limite senza toccare le altre azioni.
 
 ### `Strumento`
 
@@ -61,9 +72,42 @@ Una mossa che colpisce il bersaglio con un danno di un elemento. Le mosse che ca
 
 Prima la classe si chiamava `LancioFiala`. Quando ho scritto i nemici mi sono accorto che anche i loro attacchi funzionano allo stesso modo, ma chiamare "lancio di una fiala" il morso di un verme era sbagliato. Ho rinominato la classe e l'ho riusata invece di scriverne una copia.
 
+Prima di colpire, il colpo chiede a chi lo usa `potenziaDanno(danno)`, così un Catalizzatore attivo raddoppia il danno. Lo fa anche `AttaccoBase`.
+
+### `ColpoConEffetto`
+
+Un `Colpo` che, oltre al danno, lascia un effetto sul bersaglio: Veleno Sulfureo (Zolfo, 4 di danno più il Veleno, costa 5) e Cristalli Pietrificanti (Sale, 5 di danno più la Pietrificazione, costa 7). È una sottoclasse di `Colpo`: fa il colpo normale con `super.esegui` e poi aggiunge l'effetto. Se il bersaglio è già sconfitto l'effetto non serve e non lo aggiungo.
+
+Il costruttore non riceve un effetto ma un `Supplier<Effetto>`, cioè una piccola funzione che crea un effetto nuovo ogni volta che la chiamo (per esempio `() -> new Veleno()`). Mi serve perché un effetto conta i suoi turni: se usassi sempre lo stesso oggetto, il secondo lancio riceverebbe un veleno già a metà.
+
+### `Preparazione`
+
+Una mossa che non tocca il bersaglio: chi la usa applica un effetto a se stesso. La usano Corazza di Sale (costa 5) e Catalizzatore (costa 3). Anche questa riceve un `Supplier<Effetto>`, per lo stesso motivo.
+
+### `Effetto` (classe astratta)
+
+Qualcosa che resta addosso a un combattente per alcuni turni. Ha un nome e i turni che gli restano. Alla fine di ogni turno `fineTurno` fa agire l'effetto e toglie un turno; quando arriva a zero l'effetto è scaduto e il combattente lo toglie.
+
+Nel progetto iniziale `Effetto` era un'interfaccia. L'ho fatta diventare una classe astratta perché tutti gli effetti contano i turni nello stesso modo: così il conteggio è scritto una volta sola. `fineTurno` è `final`: le sottoclassi non possono cambiare il conteggio, possono solo dire cosa succede in quel momento riscrivendo `allaFineDelTurno`.
+
+La classe ha quattro metodi che di base non fanno niente: `allaFineDelTurno`, `modificaDannoSubito`, `modificaDannoInflitto` e `impedisceDiAgire`. Ogni effetto riscrive solo quello che gli interessa. Per aggiungere un effetto nuovo scrivo una sottoclasse e non modifico né `Combattente` né `Combattimento`.
+
+La durata conta anche il turno in cui l'effetto viene applicato, perché il primo fine turno arriva subito dopo la mossa. I numeri sono provvisori:
+
+| Effetto | Su chi | Cosa fa |
+|---|---|---|
+| `Veleno` | nemico | a fine turno toglie 4 punti vita, per 3 turni (12 in tutto) |
+| `CorazzaDiSale` | chi la usa | dimezza il danno dei colpi ricevuti per 3 turni, compreso quello in cui la usa |
+| `Pietrificazione` | nemico | il nemico salta la sua risposta in quel turno |
+| `Catalizzatore` | chi lo usa | il colpo del turno dopo fa il doppio, poi l'effetto si consuma; se in quel turno non colpisco, si perde |
+
+Il Veleno toglie vita con `subisciDanno`, senza moltiplicatore di elemento, quindi la Corazza non lo ferma.
+
 ### `Distillazione`
 
-Chi la usa salta l'attacco e recupera 8 reagenti e 5 punti vita. Non costa niente e non tocca il bersaglio. Più avanti, quando aggiungerò gli effetti, ridurrà anche il danno del colpo successivo.
+Chi la usa salta l'attacco e recupera 8 reagenti e 5 punti vita. Non costa niente e non tocca il bersaglio. È una cura e non protegge dai colpi: per difendersi c'è la Corazza di Sale.
+
+Si può usare al massimo 2 volte per scontro. Senza limite, alternando Corazza di Sale e Distillazione si recuperava più vita di quanta se ne perdeva e lo scontro non finiva mai. Dato che l'alchimista non recupera più reagenti a fine turno, la Distillazione è l'unico modo per ricaricarli durante uno scontro: va usata al momento giusto.
 
 ### `Nemico` (classe astratta)
 
@@ -85,10 +129,17 @@ Il metodo `turnoAlchimista(azione)` gioca un turno intero:
 
 1. controlla che lo scontro non sia finito e che l'alchimista conosca la mossa;
 2. l'alchimista usa la mossa sul nemico (se i reagenti non bastano, `usa` lancia un'eccezione e il turno non parte);
-3. se il nemico resta in piedi, sceglie una mossa con `scegliAzione()` e la usa sull'alchimista;
-4. a fine turno tutti e due recuperano 2 reagenti.
+3. se il nemico resta in piedi, sceglie una mossa con `scegliAzione()` e la usa sull'alchimista; se un effetto lo blocca (`puoAgire()` è falso), salta il turno;
+4. se nessuno dei due è caduto, agiscono gli effetti di fine turno (per esempio il Veleno);
+5. se lo scontro continua ancora, il nemico recupera 2 reagenti. L'alchimista no: per recuperarli deve distillare.
 
-L'alchimista muove per primo. Se sconfigge il nemico, il nemico non contrattacca, quindi `isVinto()` controlla solo se il nemico è sconfitto.
+Prima di tutto questo il turno controlla anche che la mossa si possa usare (`puoUsare`): servono i reagenti e la mossa non deve aver finito gli usi dello scontro. Il combattimento conta quante volte l'alchimista ha usato ogni mossa in una mappa (`HashMap`), e `getUsiRimasti` dice quante volte si può ancora usare. Gli usi li conto qui e non nella mossa, perché la stessa Distillazione serve in tutti gli scontri: con un nuovo combattimento il conto riparte da zero.
+
+L'alchimista muove per primo. Se sconfigge il nemico, il nemico non contrattacca. Con il Veleno però poteva succedere che il nemico sconfiggesse l'alchimista e poi morisse avvelenato a fine turno. Ho deciso che gli effetti di fine turno agiscono solo se lo scontro non è già finito, quindi non possono cadere tutti e due: se l'alchimista cade, lo scontro è perso. Per sicurezza `isVinto()` controlla che il nemico sia sconfitto e che l'alchimista sia ancora in piedi.
+
+Il danno del Veleno sul nemico conta tra i danni inflitti, e nel registro compare una frase come "Verme Cieco perde 4 punti vita a fine turno". Se il nemico è pietrificato il registro scrive "Verme Cieco è bloccato e salta il turno"; in quel caso il suo elemento resta nascosto, perché non ha mosso.
+
+Per ora solo il nemico può essere bloccato: nessuna mossa dei nemici pietrifica l'alchimista. Se un giorno servisse, andrebbe aggiunto lo stesso controllo anche al turno dell'alchimista.
 
 All'inizio dello scontro chi gioca non sa di che elemento è il nemico. Lo scopre dopo la prima mossa del nemico: `isElementoNemicoRivelato()` diventa vero appena il nemico ha mosso. Prima si può solo intuire, guardando quanti danni fanno le proprie fiale. Ho messo questa regola nel combattimento e non nella grafica perché fa parte del gioco: così vale per qualsiasi interfaccia e la posso controllare con un test.
 
@@ -124,7 +175,7 @@ Dice se la partita è in corso, vinta o persa.
 
 Tiene insieme la partita intera: l'alchimista, il piano attuale e lo scontro in corso. La grafica parlerà solo con questa classe.
 
-`passaAlPianoSuccessivo()` porta l'alchimista al piano dopo. Prima controlla che lo scontro sia vinto e che la partita non sia finita, poi restituisce all'alchimista il 30% della vita massima e tutti i reagenti, e chiede al generatore il nemico del nuovo piano. Senza questo recupero il gioco diventerebbe frustrante dopo pochi piani.
+`passaAlPianoSuccessivo()` porta l'alchimista al piano dopo. Prima controlla che lo scontro sia vinto e che la partita non sia finita, poi toglie all'alchimista gli effetti rimasti dallo scontro (una Corazza non deve passare al piano dopo), gli restituisce il 30% della vita massima e metà dei reagenti massimi, e chiede al generatore il nemico del nuovo piano. Senza questo recupero il gioco diventerebbe frustrante dopo pochi piani. All'inizio restituivo tutti i reagenti, ma così non c'era mai motivo di risparmiarli: ora chi spreca in uno scontro lo paga anche in quello dopo.
 
 `getStato()` restituisce PERSA se l'alchimista è sconfitto e VINTA se ha battuto il nemico dell'ultimo piano. Per ora l'ultimo piano è il 12. Quando aggiungerò la Camera del Sigillo, la vittoria arriverà al piano 13.
 
@@ -180,7 +231,7 @@ Raccoglie in un posto solo come la grafica mostra le cose del modello: i nomi e 
 
 ### `SchermataCombattimento`
 
-Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Nel testo del pulsante c'è il costo della mossa in reagenti, tra parentesi (per esempio "Fiala Ardente (4)"), e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`).
+Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Nel testo del pulsante c'è il costo della mossa in reagenti, tra parentesi (per esempio "Fiala Ardente (4)"), e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`). Per le mosse con un limite il pulsante mostra anche gli usi rimasti, per esempio "Distillazione [1 su 2]", e si spegne quando sono finiti (lo chiede a `puoUsare` del combattimento). I pulsanti stanno in un `FlowPane`, un contenitore che li manda a capo da solo quando non ci stanno in una riga. Accanto a vita e reagenti compaiono gli effetti attivi con i turni che restano, per esempio "Veleno (2)".
 
 Quando si preme un pulsante, la schermata passa la mossa a `turnoAlchimista` e poi rilegge tutto dal modello: vita, reagenti, registro e se l'elemento del nemico è stato scoperto. Finché non è scoperto il riquadro del nemico ha solo un bordo tratteggiato; dopo prende il colore del suo elemento (Zolfo giallo, Mercurio grigio, Sale azzurrino), e una piccola legenda spiega i colori.
 
@@ -194,18 +245,20 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `CombattenteTest` controlla danni, cure, sconfitta, reagenti, il moltiplicatore dei colpi (anche l'arrotondamento: metà di 5 fa 3) e il metodo `usa`, compreso il caso in cui i reagenti non bastano. Una classe astratta non si può creare, quindi i test usano `CombattenteDiProva`, una piccola sottoclasse che esiste solo nella cartella dei test.
 
-`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le cinque mosse iniziali, che la lista delle mosse non si possa modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri. Controlla anche il costruttore per i salvataggi: ricrea vita e reagenti e rifiuta valori impossibili.
+`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le mosse iniziali, che la lista delle mosse non si possa modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri. Controlla anche il costruttore per i salvataggi: ricrea vita e reagenti e rifiuta valori impossibili.
 
 `AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
 
+`EffettiTest` controlla ogni effetto da solo: quanto toglie il Veleno e quando sparisce, che la Corazza dimezzi i colpi ma non il Veleno, che il Catalizzatore valga per un solo colpo e si perda se non viene usato, che la Pietrificazione blocchi solo fino a fine turno, che lo stesso effetto non si sommi e che la lista degli effetti non si possa modificare da fuori. Controlla anche `ColpoConEffetto` (ogni bersaglio riceve un effetto nuovo, nessun effetto su un bersaglio già sconfitto) e `Preparazione` (l'effetto va a chi la usa).
+
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
 
-`CombattimentoTest` controlla un turno completo con i messaggi del registro, le statistiche dello scontro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, il recupero dei reagenti a fine turno, quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
+`CombattimentoTest` controlla un turno completo con i messaggi del registro, le statistiche dello scontro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, che a fine turno solo il nemico recuperi reagenti, il limite di 2 Distillazioni per scontro (e che riparta da zero nello scontro dopo), quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Controlla anche gli effetti dentro lo scontro: il nemico pietrificato salta il turno, il Veleno conta tra i danni inflitti e può vincere lo scontro, se l'alchimista cade il Veleno non agisce più, la Corazza protegge già dalla risposta del nemico e il Catalizzatore raddoppia il colpo del turno dopo. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
 
 `ZonaTest` controlla a quale zona appartengono i piani, la posizione dentro la zona e che i piani fuori dalle zone vengano rifiutati.
 
 `GeneratoreNemiciPerZonaTest` prova 20 semi diversi e controlla ogni volta che nei primi tre piani di ogni zona escano tutti e tre i principi. Controlla anche che ogni volta nasca un nemico nuovo con la vita piena, che i nemici della Fornace abbiano più vita di quelli delle Cantine e che due generatori con lo stesso seme propongano gli stessi nemici in tutti i piani.
 
-`PartitaTest` usa `GeneratoreDiProva`, una piccola classe che crea sempre lo stesso nemico: in un test cade al primo colpo, in un altro è imbattibile. Prima i generatori di prova erano lambda; da quando l'interfaccia ha anche `getSeme()` una lambda non basta più. Il test controlla l'inizio della partita, la ripresa da un piano qualsiasi (e il rifiuto dei piani che non esistono), che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), la vittoria all'ultimo piano e la sconfitta.
+`PartitaTest` usa `GeneratoreDiProva`, una piccola classe che crea sempre lo stesso nemico: in un test cade al primo colpo, in un altro è imbattibile. Prima i generatori di prova erano lambda; da quando l'interfaccia ha anche `getSeme()` una lambda non basta più. Il test controlla l'inizio della partita, la ripresa da un piano qualsiasi (e il rifiuto dei piani che non esistono), che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), che scendendo di piano si perdano gli effetti, la vittoria all'ultimo piano e la sconfitta.
 
 `SalvataggioJsonTest` scrive in una cartella temporanea che JUnit crea e cancella da solo (`@TempDir`). Controlla che una partita salvata si ricarichi uguale, con lo stesso nemico al suo piano, che un nuovo salvataggio sostituisca il vecchio, che la cartella venga creata se manca e che dopo `cancella()` non resti niente da caricare (cancellare quando non c'è nessun salvataggio non dà errore). Controlla anche i casi senza salvataggio valido: file assente, vuoto, rovinato, senza nome o con valori impossibili.

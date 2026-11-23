@@ -5,10 +5,11 @@ import java.util.Objects;
 /**
  * Una partita intera: l'alchimista scende piano per piano e a ogni piano
  * affronta uno scontro. Tra un piano e l'altro recupera parte della vita
- * e tutti i reagenti. È la classe con cui parla la grafica.
+ * e metà dei reagenti. È la classe con cui parla la grafica.
  */
 public class Partita {
     private static final double RECUPERO_VITA_TRA_PIANI = 0.3;
+    private static final double RECUPERO_REAGENTI_TRA_PIANI = 0.5;
 
     private final Alchimista alchimista;
     private final GeneratoreNemici generatore;
@@ -84,8 +85,9 @@ public class Partita {
     }
 
     /**
-     * Scende al piano successivo: l'alchimista recupera il 30% della vita massima
-     * e tutti i reagenti, poi inizia lo scontro con il nuovo nemico.
+     * Scende al piano successivo: l'alchimista perde gli effetti dello scontro,
+     * recupera il 30% della vita massima e metà dei reagenti massimi, poi inizia
+     * lo scontro con il nuovo nemico.
      *
      * @throws IllegalStateException se lo scontro del piano non è vinto o la partita è finita
      */
@@ -96,8 +98,10 @@ public class Partita {
         if (!combattimento.isVinto()) {
             throw new IllegalStateException("Lo scontro del piano non è ancora vinto");
         }
+        alchimista.rimuoviEffetti();
         alchimista.cura((int) Math.round(alchimista.getVitaMassima() * RECUPERO_VITA_TRA_PIANI));
-        alchimista.recuperaReagenti(alchimista.getReagentiMassimi());
+        alchimista.recuperaReagenti(
+                (int) Math.round(alchimista.getReagentiMassimi() * RECUPERO_REAGENTI_TRA_PIANI));
         piano++;
         combattimento = new Combattimento(alchimista, generatore.creaNemico(piano));
     }

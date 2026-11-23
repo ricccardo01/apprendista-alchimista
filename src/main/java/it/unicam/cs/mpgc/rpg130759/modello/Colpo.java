@@ -44,6 +44,6 @@ public class Colpo implements Azione {
 
     @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
-        bersaglio.subisciColpo(danno, elemento);
+        bersaglio.subisciColpo(chi.potenziaDanno(danno), elemento);
     }
 }

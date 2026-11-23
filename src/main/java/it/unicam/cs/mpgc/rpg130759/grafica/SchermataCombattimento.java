@@ -4,6 +4,7 @@ import it.unicam.cs.mpgc.rpg130759.modello.Alchimista;
 import it.unicam.cs.mpgc.rpg130759.modello.Azione;
 import it.unicam.cs.mpgc.rpg130759.modello.Combattente;
 import it.unicam.cs.mpgc.rpg130759.modello.Combattimento;
+import it.unicam.cs.mpgc.rpg130759.modello.Effetto;
 import it.unicam.cs.mpgc.rpg130759.modello.Elemento;
 import it.unicam.cs.mpgc.rpg130759.modello.Nemico;
 import javafx.geometry.Insets;
@@ -15,6 +16,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -47,7 +49,7 @@ public class SchermataCombattimento {
     private final Label datiAlchimista = new Label();
     private final ListView<String> registro = new ListView<>();
     private final Map<Azione, Button> pulsanti = new LinkedHashMap<>();
-    private final HBox rigaMosse = new HBox(SPAZIO);
+    private final FlowPane rigaMosse = new FlowPane(SPAZIO, SPAZIO);
     private final VBox riepilogo = new VBox(SPAZIO / 2);
     private final Label esito = new Label();
     private final Label statistiche = new Label();
@@ -167,7 +169,8 @@ public class SchermataCombattimento {
         registro.scrollTo(registro.getItems().size() - 1);
 
         for (Map.Entry<Azione, Button> voce : pulsanti.entrySet()) {
-            voce.getValue().setDisable(!alchimista.haReagenti(voce.getKey().getCosto()));
+            voce.getValue().setText(testoDi(voce.getKey()));
+            voce.getValue().setDisable(!combattimento.puoUsare(voce.getKey()));
         }
 
         boolean finito = combattimento.isFinito();
@@ -209,14 +212,27 @@ public class SchermataCombattimento {
 
     private static void mostraDati(Combattente combattente, ProgressBar barra, Label dati) {
         barra.setProgress((double) combattente.getVita() / combattente.getVitaMassima());
-        dati.setText("Vita " + combattente.getVita() + "/" + combattente.getVitaMassima()
-                + "   Reagenti " + combattente.getReagenti() + "/" + combattente.getReagentiMassimi());
+        String testo = "Vita " + combattente.getVita() + "/" + combattente.getVitaMassima()
+                + "   Reagenti " + combattente.getReagenti() + "/" + combattente.getReagentiMassimi();
+        for (Effetto effetto : combattente.getEffetti()) {
+            testo += "   " + effetto.getNome() + " (" + effetto.getTurniRimasti() + ")";
+        }
+        dati.setText(testo);
     }
 
-    private static String testoDi(Azione azione) {
-        if (azione.getCosto() == 0) {
-            return azione.getNome();
+    /**
+     * Il testo del pulsante: il nome, il costo se c'è e, per le mosse
+     * con un limite, quante volte si possono ancora usare.
+     */
+    private String testoDi(Azione azione) {
+        String testo = azione.getNome();
+        if (azione.getCosto() > 0) {
+            testo += " (" + azione.getCosto() + ")";
         }
-        return azione.getNome() + " (" + azione.getCosto() + ")";
+        int usiRimasti = combattimento.getUsiRimasti(azione);
+        if (usiRimasti != Azione.SENZA_LIMITE) {
+            testo += " [" + usiRimasti + " su " + azione.getUsiPerScontro() + "]";
+        }
+        return testo;
     }
 }

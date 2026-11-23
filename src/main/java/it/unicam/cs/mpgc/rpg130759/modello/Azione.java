@@ -7,6 +7,9 @@ package it.unicam.cs.mpgc.rpg130759.modello;
  */
 public interface Azione {
 
+    /** Il valore di {@link #getUsiPerScontro()} per le azioni senza limite di usi. */
+    int SENZA_LIMITE = Integer.MAX_VALUE;
+
     /**
      * @return il nome mostrato nel gioco
      */
@@ -16,6 +19,16 @@ public interface Azione {
      * @return i reagenti necessari per usare l'azione
      */
     int getCosto();
+
+    /**
+     * Quante volte l'azione si può usare in uno scontro. Di base non c'è limite:
+     * solo le azioni che hanno un limite riscrivono questo metodo.
+     *
+     * @return il numero massimo di usi per scontro, o {@link #SENZA_LIMITE}
+     */
+    default int getUsiPerScontro() {
+        return SENZA_LIMITE;
+    }
 
     /**
      * Applica l'effetto dell'azione. Non paga il costo: per quello si usa

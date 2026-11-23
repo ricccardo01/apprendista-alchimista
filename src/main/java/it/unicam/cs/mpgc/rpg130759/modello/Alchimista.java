@@ -15,7 +15,7 @@ public class Alchimista extends Combattente {
     private static final int REAGENTI_INIZIALI = 20;
     private static final Strumento STRUMENTO_INIZIALE =
             new Strumento("Pestello di Legno", 6, Elemento.NEUTRO);
-    private static final int COSTO_FORMULA_INIZIALE = 4;
+    private static final int COSTO_FORMULA_INIZIALE = 5;
     private static final int DANNO_FORMULA_INIZIALE = 10;
 
     private final Strumento strumento;
@@ -24,7 +24,8 @@ public class Alchimista extends Combattente {
     /**
      * Crea un alchimista all'inizio della partita, con il pestello in mano e
      * senza elemento proprio, così nessun principio ha un vantaggio fisso contro di lui.
-     * Conosce l'attacco base, la Distillazione e una formula per ogni principio.
+     * Conosce l'attacco base, la Distillazione, una formula per ogni principio
+     * e, finché non si potranno imparare salendo di livello, le formule con effetti.
      *
      * @param nome il nome scelto dal giocatore, da 1 a {@link #LUNGHEZZA_MASSIMA_NOME} caratteri
      * @throws IllegalArgumentException se il nome è vuoto o troppo lungo
@@ -37,7 +38,12 @@ public class Alchimista extends Combattente {
                 new Distillazione(),
                 formulaIniziale("Fiala Ardente", Elemento.ZOLFO),
                 formulaIniziale("Nebbia Mercuriale", Elemento.MERCURIO),
-                formulaIniziale("Polvere Cristallizzante", Elemento.SALE));
+                formulaIniziale("Polvere Cristallizzante", Elemento.SALE),
+                new ColpoConEffetto("Veleno Sulfureo", 5, 4, Elemento.ZOLFO, () -> new Veleno()),
+                new ColpoConEffetto("Cristalli Pietrificanti", 7, 5, Elemento.SALE,
+                        () -> new Pietrificazione()),
+                new Preparazione("Corazza di Sale", 5, () -> new CorazzaDiSale()),
+                new Preparazione("Catalizzatore", 3, () -> new Catalizzatore()));
     }
 
     /**

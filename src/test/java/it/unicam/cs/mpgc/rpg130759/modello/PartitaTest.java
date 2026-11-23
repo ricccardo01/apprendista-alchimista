@@ -3,6 +3,7 @@ package it.unicam.cs.mpgc.rpg130759.modello;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Random;
@@ -81,7 +82,7 @@ class PartitaTest {
     }
 
     @Test
-    void scendendoSiRecuperaIl30PerCentoDellaVitaETuttiIReagenti() {
+    void scendendoSiRecuperaIl30PerCentoDellaVitaEMetaDeiReagenti() {
         Partita partita = new Partita(alchimista, nemiciDeboli);
         Combattimento primoScontro = partita.getCombattimento();
         alchimista.subisciDanno(50);
@@ -92,8 +93,19 @@ class PartitaTest {
 
         assertEquals(2, partita.getPiano());
         assertEquals(80, alchimista.getVita());
-        assertEquals(20, alchimista.getReagenti());
+        assertEquals(15, alchimista.getReagenti());
         assertNotSame(primoScontro, partita.getCombattimento());
+    }
+
+    @Test
+    void scendendoSiPerdonoGliEffettiDelloScontro() {
+        Partita partita = new Partita(alchimista, nemiciDeboli);
+        alchimista.aggiungiEffetto(new CorazzaDiSale());
+        vinciLoScontro(partita);
+
+        partita.passaAlPianoSuccessivo();
+
+        assertTrue(alchimista.getEffetti().isEmpty());
     }
 
     @Test

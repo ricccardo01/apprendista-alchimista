@@ -1,11 +1,14 @@
 package it.unicam.cs.mpgc.rpg130759.modello;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Chi può partecipare a uno scontro: ha un nome, un elemento, dei punti vita,
- * dei reagenti (l'energia con cui paga le azioni) e le mosse che conosce.
+ * dei reagenti (l'energia con cui paga le azioni), le mosse che conosce
+ * e gli effetti che ha addosso.
  * Garantisce che vita e reagenti restino sempre tra 0 e il massimo.
  */
 public abstract class Combattente {
@@ -15,6 +18,7 @@ public abstract class Combattente {
     private final int reagentiMassimi;
     private int vita;
     private int reagenti;
+    private final List<Effetto> effetti = new ArrayList<>();
 
     /**
      * Crea un combattente con vita e reagenti al massimo.
@@ -84,7 +88,8 @@ public abstract class Combattente {
 
     /**
      * Subisce un colpo di un certo elemento: il danno viene moltiplicato
-     * in base al vantaggio tra l'elemento del colpo e quello del combattente.
+     * in base al vantaggio tra l'elemento del colpo e quello del combattente,
+     * poi gli effetti attivi possono ridurlo.
      *
      * @param danno il danno prima del moltiplicatore, non negativo
      * @param elementoColpo l'elemento del colpo
@@ -92,8 +97,77 @@ public abstract class Combattente {
      */
     public int subisciColpo(int danno, Elemento elementoColpo) {
         int dannoFinale = (int) Math.round(danno * elementoColpo.moltiplicatoreContro(elemento));
+        for (Effetto effetto : effetti) {
+            dannoFinale = effetto.modificaDannoSubito(dannoFinale);
+        }
         subisciDanno(dannoFinale);
         return dannoFinale;
+    }
+
+    /**
+     * Calcola il danno di un colpo che il combattente sta per dare,
+     * tenendo conto degli effetti attivi. Gli effetti che si consumano
+     * quando vengono usati spariscono subito.
+     *
+     * @param danno il danno della mossa
+     * @return il danno da infliggere
+     */
+    public int potenziaDanno(int danno) {
+        int dannoFinale = danno;
+        for (Effetto effetto : effetti) {
+            dannoFinale = effetto.modificaDannoInflitto(dannoFinale);
+        }
+        effetti.removeIf(effetto -> effetto.isScaduto());
+        return dannoFinale;
+    }
+
+    /**
+     * @return gli effetti attivi, in una lista non modificabile
+     */
+    public List<Effetto> getEffetti() {
+        return Collections.unmodifiableList(effetti);
+    }
+
+    /**
+     * Aggiunge un effetto. Se ce n'è già uno con lo stesso nome lo sostituisce,
+     * così lo stesso effetto non si somma più volte ma ricomincia da capo.
+     *
+     * @param effetto l'effetto da aggiungere
+     */
+    public void aggiungiEffetto(Effetto effetto) {
+        Objects.requireNonNull(effetto, "L'effetto è obbligatorio");
+        effetti.removeIf(attivo -> attivo.getNome().equals(effetto.getNome()));
+        effetti.add(effetto);
+    }
+
+    /**
+     * Toglie tutti gli effetti, per esempio quando finisce uno scontro.
+     */
+    public void rimuoviEffetti() {
+        effetti.clear();
+    }
+
+    /**
+     * Fa agire gli effetti di fine turno, consuma un turno di ognuno
+     * e toglie quelli finiti.
+     */
+    public void applicaEffettiDiFineTurno() {
+        for (Effetto effetto : effetti) {
+            effetto.fineTurno(this);
+        }
+        effetti.removeIf(effetto -> effetto.isScaduto());
+    }
+
+    /**
+     * @return false se un effetto impedisce al combattente di fare la sua mossa
+     */
+    public boolean puoAgire() {
+        for (Effetto effetto : effetti) {
+            if (effetto.impedisceDiAgire()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

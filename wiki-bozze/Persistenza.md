@@ -2,7 +2,7 @@
 
 ## Quando salvo
 
-Salvo la partita solo tra un piano e l'altro, mai durante uno scontro. Così nel file bastano pochi dati e non devo salvare il nemico, il registro o i turni. Se chiudi il gioco a metà scontro, quando riprendi ricominci lo scontro di quel piano.
+Salvo la partita solo tra un piano e l'altro, mai durante uno scontro. Così nel file bastano pochi dati e non devo salvare il nemico, il registro, i turni o gli effetti (Veleno, Corazza di Sale...): quando si cambia piano l'alchimista li perde comunque. Se chiudi il gioco a metà scontro, quando riprendi ricominci lo scontro di quel piano.
 
 Il salvataggio è automatico, non c'è un pulsante "Salva". Avviene in due momenti:
 
