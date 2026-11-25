@@ -151,7 +151,9 @@ public class Combattimento {
         usi.put(azione, usi.getOrDefault(azione, 0) + 1);
         turni++;
         reagentiSpesi += azione.getCosto();
+        int vitaAlchimistaPrima = alchimista.getVita();
         dannoInflitto += esegui(alchimista, azione, nemico);
+        dannoSubito += Math.max(0, vitaAlchimistaPrima - alchimista.getVita());
         if (!nemico.isSconfitto()) {
             turnoNemico();
         }
@@ -196,20 +198,28 @@ public class Combattimento {
     }
 
     /**
-     * Fa usare un'azione e la scrive nel registro.
+     * Fa usare un'azione e la scrive nel registro, insieme alla vita
+     * che chi la usa ha recuperato o perso (per esempio con un rinculo).
      *
      * @return i punti vita persi dal bersaglio
      */
     private int esegui(Combattente chi, Azione azione, Combattente bersaglio) {
         int vitaPrima = bersaglio.getVita();
+        int vitaChiPrima = chi.getVita();
         chi.usa(azione, bersaglio);
         int danno = vitaPrima - bersaglio.getVita();
+        int variazioneChi = chi.getVita() - vitaChiPrima;
 
         String messaggio = chi.getNome() + " usa " + azione.getNome();
         if (danno > 0) {
             messaggio += ": " + danno + " danni a " + bersaglio.getNome();
         }
         registro.add(messaggio);
+        if (variazioneChi > 0) {
+            registro.add(chi.getNome() + " recupera " + variazioneChi + " punti vita");
+        } else if (variazioneChi < 0) {
+            registro.add(chi.getNome() + " perde " + (-variazioneChi) + " punti vita");
+        }
         if (bersaglio.isSconfitto()) {
             registro.add(bersaglio.getNome() + " è sconfitto");
         }

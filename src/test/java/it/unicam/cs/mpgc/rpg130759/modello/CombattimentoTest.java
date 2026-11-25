@@ -52,6 +52,34 @@ class CombattimentoTest {
     }
 
     @Test
+    void ilRinculoFinisceNelRegistroENeiDanniSubiti() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        scontro.turnoAlchimista(mossa("Esplosione di Zolfo"));
+
+        assertEquals(64, scontro.getNemico().getVita());
+        assertEquals(90, alchimista.getVita());
+        assertEquals(10, scontro.getDannoSubito());
+        assertEquals(List.of(
+                "Alchimista usa Esplosione di Zolfo: 36 danni a Verme Cieco",
+                "Alchimista perde 5 punti vita",
+                "Verme Cieco usa Morso: 5 danni a Alchimista"), scontro.getRegistro());
+    }
+
+    @Test
+    void laSanguisugaScriveNelRegistroLaVitaRecuperata() {
+        Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
+
+        scontro.turnoAlchimista(attaccoBase());
+        scontro.turnoAlchimista(mossa("Sanguisuga d'Argento"));
+
+        assertEquals(94, alchimista.getVita());
+        assertEquals("Alchimista usa Sanguisuga d'Argento: 8 danni a Verme Cieco",
+                scontro.getRegistro().get(2));
+        assertEquals("Alchimista recupera 4 punti vita", scontro.getRegistro().get(3));
+    }
+
+    @Test
     void leStatisticheContanoLaVitaPersaDavveroEIReagentiSpesi() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(30, DANNO_MORSO));
 

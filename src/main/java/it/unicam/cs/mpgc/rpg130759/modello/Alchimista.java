@@ -2,6 +2,7 @@ package it.unicam.cs.mpgc.rpg130759.modello;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 /**
  * Il personaggio del giocatore. Oltre a ciò che ha ogni combattente
@@ -25,7 +26,8 @@ public class Alchimista extends Combattente {
      * Crea un alchimista all'inizio della partita, con il pestello in mano e
      * senza elemento proprio, così nessun principio ha un vantaggio fisso contro di lui.
      * Conosce l'attacco base, la Distillazione, una formula per ogni principio
-     * e, finché non si potranno imparare salendo di livello, le formule con effetti.
+     * e, finché non si potranno imparare salendo di livello, le formule con effetti
+     * e quelle speciali.
      *
      * @param nome il nome scelto dal giocatore, da 1 a {@link #LUNGHEZZA_MASSIMA_NOME} caratteri
      * @throws IllegalArgumentException se il nome è vuoto o troppo lungo
@@ -43,7 +45,10 @@ public class Alchimista extends Combattente {
                 new ColpoConEffetto("Cristalli Pietrificanti", 7, 5, Elemento.SALE,
                         () -> new Pietrificazione()),
                 new Preparazione("Corazza di Sale", 5, () -> new CorazzaDiSale()),
-                new Preparazione("Catalizzatore", 3, () -> new Catalizzatore()));
+                new Preparazione("Catalizzatore", 3, () -> new Catalizzatore()),
+                new ColpoAssorbente("Sanguisuga d'Argento", 6, 8, Elemento.MERCURIO),
+                new ColpoConRinculo("Esplosione di Zolfo", 8, 18, Elemento.ZOLFO, 5),
+                new ColpoInstabile("Mercurio Instabile", 5, 2, 20, Elemento.MERCURIO, new Random()));
     }
 
     /**

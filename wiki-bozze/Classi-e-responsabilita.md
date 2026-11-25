@@ -44,7 +44,7 @@ Il metodo astratto `getAzioni()` restituisce le mosse che il combattente conosce
 
 All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e una formula per ogni principio (Fiala Ardente di Zolfo, Nebbia Mercuriale di Mercurio, Polvere Cristallizzante di Sale). Le tre formule costano 5 reagenti e fanno 10 di danno. Avendo un elemento per tipo, posso sfruttare il vantaggio contro qualsiasi nemico fin dal primo piano.
 
-Per ora l'alchimista conosce fin dall'inizio anche le quattro formule con effetti: Veleno Sulfureo, Cristalli Pietrificanti, Corazza di Sale e Catalizzatore. È una soluzione provvisoria per poterle provare giocando. Quando aggiungerò i livelli, partirà con le tre formule iniziali e imparerà le altre salendo di livello.
+Per ora l'alchimista conosce fin dall'inizio anche le quattro formule con effetti (Veleno Sulfureo, Cristalli Pietrificanti, Corazza di Sale e Catalizzatore) e le tre formule speciali (Sanguisuga d'Argento, Esplosione di Zolfo e Mercurio Instabile). È una soluzione provvisoria per poterle provare giocando. Quando aggiungerò i livelli, partirà con le tre formule iniziali e imparerà le altre salendo di livello.
 
 Il nome lo sceglie chi gioca e deve avere da 1 a 10 caratteri. Il controllo è nel costruttore: un alchimista con un nome vuoto o troppo lungo non viene creato. La grafica impedisce già di scrivere più di 10 caratteri, ma la regola sta nel modello perché vale per qualsiasi interfaccia.
 
@@ -83,6 +83,22 @@ Il costruttore non riceve un effetto ma un `Supplier<Effetto>`, cioè una piccol
 ### `Preparazione`
 
 Una mossa che non tocca il bersaglio: chi la usa applica un effetto a se stesso. La usano Corazza di Sale (costa 5) e Catalizzatore (costa 3). Anche questa riceve un `Supplier<Effetto>`, per lo stesso motivo.
+
+### Formule speciali: `ColpoAssorbente`, `ColpoConRinculo`, `ColpoInstabile`
+
+Sono le formule che non cambiano solo nei numeri ma si comportano in modo diverso, per questo hanno una classe ciascuna. Ho dato alle classi un nome generico e non quello della formula, perché un giorno potrebbe usarle anche un nemico. I numeri sono provvisori:
+
+| Classe | Formula | Costo | Cosa fa |
+|---|---|---|---|
+| `ColpoAssorbente` | Sanguisuga d'Argento (Mercurio) | 6 | 8 di danno; chi la usa recupera metà della vita tolta al bersaglio, arrotondata per difetto |
+| `ColpoConRinculo` | Esplosione di Zolfo (Zolfo) | 8 | 18 di danno; chi la usa perde 5 punti vita |
+| `ColpoInstabile` | Mercurio Instabile (Mercurio) | 5 | danno a caso tra 2 e 20, in media 11 |
+
+`ColpoAssorbente` e `ColpoConRinculo` sono sottoclassi di `Colpo`: fanno il colpo normale con `super.esegui` e poi aggiungono la loro parte. La Sanguisuga calcola la cura dalla vita che il bersaglio ha perso davvero, quindi contro un nemico protetto dalla Corazza recupera meno.
+
+Il rinculo dell'Esplosione non fa mai scendere sotto 1 punto vita. Così chi la usa non può cadere nello stesso momento del nemico, e vale ancora la regola che in uno scontro non possono essere sconfitti tutti e due. Usarla con poca vita resta comunque un rischio, perché poi basta un colpo del nemico.
+
+`ColpoInstabile` invece implementa direttamente `Azione`, perché in `Colpo` il danno è un numero fisso. Riceve un `Random` nel costruttore, come `NemicoComune`: nei test posso passarne uno con un seme fisso. Il danno estratto passa comunque da `potenziaDanno`, quindi il Catalizzatore lo raddoppia come tutti gli altri colpi. Il valore casuale non va salvato, perché si salva solo tra un piano e l'altro e mai durante uno scontro.
 
 ### `Effetto` (classe astratta)
 
@@ -143,9 +159,9 @@ Per ora solo il nemico può essere bloccato: nessuna mossa dei nemici pietrifica
 
 All'inizio dello scontro chi gioca non sa di che elemento è il nemico. Lo scopre dopo la prima mossa del nemico: `isElementoNemicoRivelato()` diventa vero appena il nemico ha mosso. Prima si può solo intuire, guardando quanti danni fanno le proprie fiale. Ho messo questa regola nel combattimento e non nella grafica perché fa parte del gioco: così vale per qualsiasi interfaccia e la posso controllare con un test.
 
-Il combattimento scrive nel registro una frase per ogni mossa, per esempio "Verme Cieco usa Morso: 5 danni a Alchimista". Calcolo il danno come differenza tra la vita del bersaglio prima e dopo la mossa, così funziona con qualsiasi azione senza cambiare l'interfaccia `Azione`. La grafica legge il registro con `getRegistro()`, che restituisce una lista non modificabile. Le frasi sono semplici stringhe e non dipendono da JavaFX.
+Il combattimento scrive nel registro una frase per ogni mossa, per esempio "Verme Cieco usa Morso: 5 danni a Alchimista". Calcolo il danno come differenza tra la vita del bersaglio prima e dopo la mossa, così funziona con qualsiasi azione senza cambiare l'interfaccia `Azione`. La grafica legge il registro con `getRegistro()`, che restituisce una lista non modificabile. Le frasi sono semplici stringhe e non dipendono da JavaFX. Allo stesso modo controllo la vita di chi fa la mossa: se è cambiata, aggiungo una frase come "Alchimista recupera 4 punti vita" (Sanguisuga, Distillazione) o "Alchimista perde 5 punti vita" (rinculo dell'Esplosione).
 
-Il combattimento conta anche le statistiche dello scontro, che la grafica mostra alla fine: turni giocati, danni inflitti, danni subiti e reagenti spesi. I danni sono la vita persa davvero: se una fiala da 20 colpisce un nemico che ha solo 10 punti vita, contano 10. Le conto nel modello perché è lì che succedono i colpi, e così posso controllarle con un test.
+Il combattimento conta anche le statistiche dello scontro, che la grafica mostra alla fine: turni giocati, danni inflitti, danni subiti e reagenti spesi. I danni sono la vita persa davvero: se una fiala da 20 colpisce un nemico che ha solo 10 punti vita, contano 10. Tra i danni subiti conto anche il rinculo dell'Esplosione, perché è vita che l'alchimista perde. Le conto nel modello perché è lì che succedono i colpi, e così posso controllarle con un test.
 
 ### `Zona` (enum)
 
