@@ -1,6 +1,7 @@
 package it.unicam.cs.mpgc.rpg130759.modello;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
  */
 class PartitaTest {
     private final Alchimista alchimista = new Alchimista("Alchimista");
+    private final Ricettario ricettario = new Ricettario(new Random(42));
 
     /**
      * Crea a ogni piano lo stesso nemico, con la vita e il danno indicati.
@@ -47,7 +49,7 @@ class PartitaTest {
 
     @Test
     void unaPartitaSalvataRiprendeDalPianoIndicato() {
-        Partita partita = new Partita(alchimista, nemiciDeboli, 7);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario, 7);
 
         assertEquals(7, partita.getPiano());
         assertEquals(Zona.LABORATORIO, partita.getZona());
@@ -56,9 +58,9 @@ class PartitaTest {
 
     @Test
     void rifiutaUnPianoCheNonEsiste() {
-        assertThrows(IllegalArgumentException.class, () -> new Partita(alchimista, nemiciDeboli, 0));
+        assertThrows(IllegalArgumentException.class, () -> new Partita(alchimista, nemiciDeboli, ricettario, 0));
         assertThrows(IllegalArgumentException.class,
-                () -> new Partita(alchimista, nemiciDeboli, Zona.ULTIMO_PIANO + 1));
+                () -> new Partita(alchimista, nemiciDeboli, ricettario, Zona.ULTIMO_PIANO + 1));
     }
 
     private void vinciLoScontro(Partita partita) {
@@ -67,7 +69,7 @@ class PartitaTest {
 
     @Test
     void unaNuovaPartitaIniziaDalPrimoPiano() {
-        Partita partita = new Partita(alchimista, nemiciDeboli);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
 
         assertEquals(1, partita.getPiano());
         assertEquals(Zona.CANTINE, partita.getZona());
@@ -76,14 +78,14 @@ class PartitaTest {
 
     @Test
     void nonSiScendeSenzaAverVintoLoScontro() {
-        Partita partita = new Partita(alchimista, nemiciDeboli);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
 
         assertThrows(IllegalStateException.class, partita::passaAlPianoSuccessivo);
     }
 
     @Test
     void scendendoSiRecuperaIl30PerCentoDellaVitaEMetaDeiReagenti() {
-        Partita partita = new Partita(alchimista, nemiciDeboli);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
         Combattimento primoScontro = partita.getCombattimento();
         alchimista.subisciDanno(50);
         alchimista.consumaReagenti(15);
@@ -99,7 +101,7 @@ class PartitaTest {
 
     @Test
     void scendendoSiPerdonoGliEffettiDelloScontro() {
-        Partita partita = new Partita(alchimista, nemiciDeboli);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
         alchimista.aggiungiEffetto(new CorazzaDiSale());
         vinciLoScontro(partita);
 
@@ -110,7 +112,7 @@ class PartitaTest {
 
     @Test
     void ilRecuperoNonSuperaLaVitaMassima() {
-        Partita partita = new Partita(alchimista, nemiciDeboli);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
         alchimista.subisciDanno(10);
         vinciLoScontro(partita);
 
@@ -121,7 +123,7 @@ class PartitaTest {
 
     @Test
     void superatoLUltimoPianoLaPartitaEVinta() {
-        Partita partita = new Partita(alchimista, nemiciDeboli);
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
         for (int piano = 1; piano < Zona.ULTIMO_PIANO; piano++) {
             vinciLoScontro(partita);
             partita.passaAlPianoSuccessivo();
@@ -135,8 +137,91 @@ class PartitaTest {
     }
 
     @Test
+    void scendendoSiGuadagnaLEsperienzaDellaZonaSenzaProposte() {
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
+        vinciLoScontro(partita);
+
+        partita.passaAlPianoSuccessivo();
+
+        assertEquals(Zona.CANTINE.getEsperienzaPerScontro(), alchimista.getEsperienza());
+        assertTrue(partita.getProposte().isEmpty());
+    }
+
+    /**
+     * Porta l'alchimista a un passo dal livello 2 e lo fa scendere di un piano,
+     * così sale di livello e riceve le proposte.
+     */
+    private Partita partitaConProposte() {
+        Partita partita = new Partita(alchimista, nemiciDeboli, ricettario);
+        alchimista.aggiungiEsperienza(alchimista.getEsperienzaPerSalire() - 1);
+        vinciLoScontro(partita);
+        partita.passaAlPianoSuccessivo();
+        return partita;
+    }
+
+    @Test
+    void salendoDiLivelloArrivanoLeProposteDelRicettario() {
+        Partita partita = partitaConProposte();
+
+        assertEquals(2, alchimista.getLivello());
+        assertEquals(Ricettario.NUMERO_PROPOSTE, partita.getProposte().size());
+    }
+
+    @Test
+    void imparandoUnaFormulaPropostaLeProposteSpariscono() {
+        Partita partita = partitaConProposte();
+        Azione scelta = partita.getProposte().get(0);
+
+        partita.imparaFormula(scelta);
+
+        assertTrue(alchimista.getFormule().contains(scelta));
+        assertTrue(partita.getProposte().isEmpty());
+    }
+
+    @Test
+    void conIlMassimoDelleFormuleBisognaDimenticarneUna() {
+        alchimista.impara(ricettario.trova("Corazza di Sale"));
+        alchimista.impara(ricettario.trova("Catalizzatore"));
+        Partita partita = partitaConProposte();
+        Azione scelta = partita.getProposte().get(0);
+        Azione fiala = alchimista.getFormule().get(0);
+
+        assertThrows(IllegalStateException.class, () -> partita.imparaFormula(scelta));
+        partita.imparaFormulaAlPostoDi(scelta, fiala);
+
+        assertTrue(alchimista.getFormule().contains(scelta));
+        assertFalse(alchimista.getFormule().contains(fiala));
+        assertEquals(Alchimista.MASSIMO_FORMULE, alchimista.getFormule().size());
+    }
+
+    @Test
+    void rinunciandoLeFormuleRestanoQuelle() {
+        Partita partita = partitaConProposte();
+        List<Azione> formulePrima = List.copyOf(alchimista.getFormule());
+
+        partita.rinunciaAllaFormula();
+
+        assertEquals(formulePrima, alchimista.getFormule());
+        assertTrue(partita.getProposte().isEmpty());
+    }
+
+    @Test
+    void nonSiImparaUnaFormulaNonProposta() {
+        Partita partita = partitaConProposte();
+        Azione nonProposta = null;
+        for (Azione formula : ricettario.getFormule()) {
+            if (!partita.getProposte().contains(formula) && !alchimista.conosceFormula(formula.getNome())) {
+                nonProposta = formula;
+            }
+        }
+        Azione daImparare = nonProposta;
+
+        assertThrows(IllegalArgumentException.class, () -> partita.imparaFormula(daImparare));
+    }
+
+    @Test
     void seLAlchimistaVieneSconfittoLaPartitaEPersa() {
-        Partita partita = new Partita(alchimista, nemiciFortissimi);
+        Partita partita = new Partita(alchimista, nemiciFortissimi, ricettario);
 
         vinciLoScontro(partita);
 

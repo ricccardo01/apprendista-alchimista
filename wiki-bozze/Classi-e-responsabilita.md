@@ -44,7 +44,11 @@ Il metodo astratto `getAzioni()` restituisce le mosse che il combattente conosce
 
 All'inizio conosce cinque mosse: l'attacco con il pestello, la Distillazione e una formula per ogni principio (Fiala Ardente di Zolfo, Nebbia Mercuriale di Mercurio, Polvere Cristallizzante di Sale). Le tre formule costano 5 reagenti e fanno 10 di danno. Avendo un elemento per tipo, posso sfruttare il vantaggio contro qualsiasi nemico fin dal primo piano.
 
-Per ora l'alchimista conosce fin dall'inizio anche le quattro formule con effetti (Veleno Sulfureo, Cristalli Pietrificanti, Corazza di Sale e Catalizzatore) e le tre formule speciali (Sanguisuga d'Argento, Esplosione di Zolfo e Mercurio Instabile). È una soluzione provvisoria per poterle provare giocando. Quando aggiungerò i livelli, partirà con le tre formule iniziali e imparerà le altre salendo di livello.
+Le altre formule le impara salendo di livello. Ogni scontro vinto dà punti esperienza (vedi `Zona`). Per salire dal livello 1 al 2 servono 100 punti, dal 2 al 3 altri 150, dal 3 al 4 altri 200: la soglia cresce di 50 a ogni livello. I punti in più restano per il livello dopo. A ogni livello la vita massima cresce di 10 e i reagenti massimi di 3. Anche la vita e i reagenti che ha in quel momento crescono della stessa quantità, ma non c'è una cura completa: altrimenti la Distillazione e il recupero tra i piani conterebbero meno. Per alzare i massimi uso `aumentaMassimi` di `Combattente`, che è `protected`: lo possono chiamare solo le sottoclassi, non la grafica.
+
+L'alchimista conosce al massimo 5 formule, oltre all'attacco base e alla Distillazione che ha sempre. `impara(formula)` ne aggiunge una se c'è spazio; quando è pieno, `sostituisci(vecchia, nuova)` dimentica una formula e mette la nuova al suo posto. Non si può imparare due volte la stessa formula. Ho messo un limite perché ogni scelta conti: tenere tutte le formule renderebbe inutile decidere. `getAzioni()` restituisce l'attacco base, la Distillazione e poi le formule, in una lista che non si può modificare da fuori.
+
+Un secondo costruttore riceve tutti i dati salvati (nome, livello, esperienza, vita, reagenti e formule) e li controlla come farebbe il gioco: un salvataggio con valori impossibili non crea nessun alchimista.
 
 Il nome lo sceglie chi gioca e deve avere da 1 a 10 caratteri. Il controllo è nel costruttore: un alchimista con un nome vuoto o troppo lungo non viene creato. La grafica impedisce già di scrivere più di 10 caratteri, ma la regola sta nel modello perché vale per qualsiasi interfaccia.
 
@@ -167,6 +171,14 @@ Il combattimento conta anche le statistiche dello scontro, che la grafica mostra
 
 Le tre zone del laboratorio: Cantine, Laboratorio e Fornace. Ogni zona ha 4 piani. `delPiano(piano)` dice a quale zona appartiene un piano e `posizioneNellaZona(piano)` dice se è il primo, il secondo, il terzo o il quarto piano della zona. Faccio questo conto in un posto solo, così le altre classi non ripetono la divisione.
 
+Ogni zona sa anche quanti punti esperienza dà uno scontro vinto: 40 nelle Cantine, 60 nel Laboratorio, 80 nella Fornace. Il valore è scritto accanto al nome della zona (`CANTINE(40)`), così aggiungendo una zona non dimentico di darle l'esperienza. Con questi numeri, vincendo tutti gli scontri, l'alchimista sale di livello dopo i piani 3, 6 e 9: impara una formula per zona e, partendo da tre, la terza volta deve dimenticarne una. All'inizio avevo messo 30/45/60 con una soglia di 100 per il livello attuale, ma con una prova automatica su 400 partite ho visto che nessuno superava il livello 3: il limite di 5 formule non entrava mai in gioco. I numeri restano provvisori.
+
+### `Ricettario`
+
+Contiene tutte le formule del gioco: le tre iniziali e le sette che si imparano salendo di livello. `proponi(alchimista)` sceglie a caso 2 formule diverse tra quelle che l'alchimista non conosce; può riproporre anche una formula iniziale che ha dimenticato. `trova(nome)` restituisce la formula con quel nome e serve al caricamento, perché nel file salvo solo i nomi. `formuleIniziali()` è un metodo `static` che crea le tre formule di partenza: lo usa il costruttore di `Alchimista`, così le formule sono scritte in un posto solo.
+
+Per aggiungere una formula al gioco basta aggiungerla al ricettario: si potrà proporre, imparare e salvare senza cambiare altre classi. Il ricettario riceve il `Random` dal costruttore, come `NemicoComune`, così nei test posso usare un seme fisso. Lo stesso `Random` lo passa a Mercurio Instabile.
+
 Calcolo l'ultimo piano moltiplicando il numero delle zone per i piani di ogni zona. Se aggiungo una quarta zona all'enum, il gioco arriva da solo fino al piano 16.
 
 ### `GeneratoreNemici` (interfaccia)
@@ -193,9 +205,11 @@ Tiene insieme la partita intera: l'alchimista, il piano attuale e lo scontro in 
 
 `passaAlPianoSuccessivo()` porta l'alchimista al piano dopo. Prima controlla che lo scontro sia vinto e che la partita non sia finita, poi toglie all'alchimista gli effetti rimasti dallo scontro (una Corazza non deve passare al piano dopo), gli restituisce il 30% della vita massima e metà dei reagenti massimi, e chiede al generatore il nemico del nuovo piano. Senza questo recupero il gioco diventerebbe frustrante dopo pochi piani. All'inizio restituivo tutti i reagenti, ma così non c'era mai motivo di risparmiarli: ora chi spreca in uno scontro lo paga anche in quello dopo.
 
+Prima del recupero l'alchimista riceve l'esperienza della zona. Se sale di livello, la partita chiede al ricettario 2 formule e le tiene in `getProposte()`. Il giocatore poi sceglie con uno di tre metodi: `imparaFormula(nuova)` se ha spazio, `imparaFormulaAlPostoDi(nuova, dimenticata)` se è pieno, oppure `rinunciaAllaFormula()`. Si possono imparare solo le formule proposte. Il recupero tiene conto dei massimi nuovi, perché il livello sale prima.
+
 `getStato()` restituisce PERSA se l'alchimista è sconfitto e VINTA se ha battuto il nemico dell'ultimo piano. Per ora l'ultimo piano è il 12. Quando aggiungerò la Camera del Sigillo, la vittoria arriverà al piano 13.
 
-La partita riceve l'alchimista e il generatore dal costruttore, invece di crearli lei. Così dipende da un'interfaccia e non da una classe concreta (principio di inversione delle dipendenze). Per il caricamento le passo un alchimista ricreato dai dati salvati.
+La partita riceve l'alchimista, il generatore e il ricettario dal costruttore, invece di crearli lei. Così dipende da un'interfaccia e non da una classe concreta (principio di inversione delle dipendenze). Per il caricamento le passo un alchimista ricreato dai dati salvati.
 
 Un secondo costruttore riceve anche il piano: lo uso per riprendere una partita salvata dall'inizio dello scontro di quel piano. `getSeme()` chiede il seme al generatore, così la persistenza lo può salvare senza sapere quale generatore usa la partita.
 
@@ -209,7 +223,7 @@ Salva, carica e cancella la partita con tre metodi: `salva(partita)`, `carica()`
 
 ### `DatiPartita` (record)
 
-La fotocopia della partita che finisce nel file: nome, vita e reagenti dell'alchimista, piano e seme. Un `record` è una classe di soli dati che Java scrive per me (costruttore, metodi per leggere i campi, `equals`). L'ho usato perché `DatiPartita` non ha regole. Sa copiare i dati da una partita (`da`) e ricreare la partita dai dati (`creaPartita`). È visibile solo dentro il package `persistenza`: il resto del programma non sa che esiste.
+La fotocopia della partita che finisce nel file: nome, livello, esperienza, vita, reagenti e nomi delle formule dell'alchimista, piano e seme. Un `record` è una classe di soli dati che Java scrive per me (costruttore, metodi per leggere i campi, `equals`). L'ho usato perché `DatiPartita` non ha regole. Sa copiare i dati da una partita (`da`) e ricreare la partita dai dati (`creaPartita`). È visibile solo dentro il package `persistenza`: il resto del programma non sa che esiste.
 
 ### `SalvataggioJson`
 
@@ -261,7 +275,9 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `CombattenteTest` controlla danni, cure, sconfitta, reagenti, il moltiplicatore dei colpi (anche l'arrotondamento: metà di 5 fa 3) e il metodo `usa`, compreso il caso in cui i reagenti non bastano. Una classe astratta non si può creare, quindi i test usano `CombattenteDiProva`, una piccola sottoclasse che esiste solo nella cartella dei test.
 
-`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le mosse iniziali, che la lista delle mosse non si possa modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri. Controlla anche il costruttore per i salvataggi: ricrea vita e reagenti e rifiuta valori impossibili.
+`AlchimistaTest` controlla lo stato iniziale, lo strumento di partenza, le mosse iniziali, che le liste delle mosse e delle formule non si possano modificare da fuori e che il nome venga rifiutato se è vuoto o più lungo di 10 caratteri. Controlla i livelli (con poca esperienza non si sale, salendo crescono i massimi e i punti in più restano, si possono salire più livelli insieme) e le formule (si impara fino a 5, non due volte la stessa, la sostituzione mette la nuova al posto della vecchia). Controlla anche il costruttore per i salvataggi: ricrea tutti i dati e rifiuta valori impossibili.
+
+`RicettarioTest` controlla che il ricettario abbia 10 formule, che trovi una formula dal nome (e rifiuti un nome sconosciuto), che proponga sempre 2 formule diverse che l'alchimista non conosce, che possa riproporre una formula iniziale dimenticata e che la lista delle proposte non si possa modificare.
 
 `AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
 
@@ -269,12 +285,12 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
 
-`CombattimentoTest` controlla un turno completo con i messaggi del registro, le statistiche dello scontro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, che a fine turno solo il nemico recuperi reagenti, il limite di 2 Distillazioni per scontro (e che riparta da zero nello scontro dopo), quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Controlla anche gli effetti dentro lo scontro: il nemico pietrificato salta il turno, il Veleno conta tra i danni inflitti e può vincere lo scontro, se l'alchimista cade il Veleno non agisce più, la Corazza protegge già dalla risposta del nemico e il Catalizzatore raddoppia il colpo del turno dopo. Il nemico di prova ha una sola mossa, così so sempre cosa farà.
+`CombattimentoTest` controlla un turno completo con i messaggi del registro, le statistiche dello scontro, il vantaggio di elemento durante lo scontro, la vittoria (il nemico sconfitto non contrattacca), la sconfitta, che a fine turno solo il nemico recuperi reagenti, il limite di 2 Distillazioni per scontro (e che riparta da zero nello scontro dopo), quando si scopre l'elemento del nemico (dopo la sua prima mossa, mai se muore prima di muovere) e i casi vietati: giocare dopo la fine, usare una mossa sconosciuta o una mossa che non si può pagare. Controlla anche gli effetti dentro lo scontro: il nemico pietrificato salta il turno, il Veleno conta tra i danni inflitti e può vincere lo scontro, se l'alchimista cade il Veleno non agisce più, la Corazza protegge già dalla risposta del nemico e il Catalizzatore raddoppia il colpo del turno dopo. Il nemico di prova ha una sola mossa, così so sempre cosa farà. Le formule che non sono tra le tre iniziali, l'alchimista del test le impara prima dal ricettario.
 
 `ZonaTest` controlla a quale zona appartengono i piani, la posizione dentro la zona e che i piani fuori dalle zone vengano rifiutati.
 
 `GeneratoreNemiciPerZonaTest` prova 20 semi diversi e controlla ogni volta che nei primi tre piani di ogni zona escano tutti e tre i principi. Controlla anche che ogni volta nasca un nemico nuovo con la vita piena, che i nemici della Fornace abbiano più vita di quelli delle Cantine e che due generatori con lo stesso seme propongano gli stessi nemici in tutti i piani.
 
-`PartitaTest` usa `GeneratoreDiProva`, una piccola classe che crea sempre lo stesso nemico: in un test cade al primo colpo, in un altro è imbattibile. Prima i generatori di prova erano lambda; da quando l'interfaccia ha anche `getSeme()` una lambda non basta più. Il test controlla l'inizio della partita, la ripresa da un piano qualsiasi (e il rifiuto dei piani che non esistono), che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), che scendendo di piano si perdano gli effetti, la vittoria all'ultimo piano e la sconfitta.
+`PartitaTest` usa `GeneratoreDiProva`, una piccola classe che crea sempre lo stesso nemico: in un test cade al primo colpo, in un altro è imbattibile. Prima i generatori di prova erano lambda; da quando l'interfaccia ha anche `getSeme()` una lambda non basta più. Il test controlla l'inizio della partita, la ripresa da un piano qualsiasi (e il rifiuto dei piani che non esistono), che non si possa scendere senza aver vinto, il recupero di vita e reagenti (anche che la vita non superi il massimo), che scendendo di piano si perdano gli effetti, la vittoria all'ultimo piano e la sconfitta. Controlla anche l'esperienza e le proposte: senza salire di livello non ci sono proposte, salendo ne arrivano 2, si può imparare una formula proposta (e solo quella), da pieni bisogna dimenticarne una e si può rinunciare.
 
-`SalvataggioJsonTest` scrive in una cartella temporanea che JUnit crea e cancella da solo (`@TempDir`). Controlla che una partita salvata si ricarichi uguale, con lo stesso nemico al suo piano, che un nuovo salvataggio sostituisca il vecchio, che la cartella venga creata se manca e che dopo `cancella()` non resti niente da caricare (cancellare quando non c'è nessun salvataggio non dà errore). Controlla anche i casi senza salvataggio valido: file assente, vuoto, rovinato, senza nome o con valori impossibili.
+`SalvataggioJsonTest` scrive in una cartella temporanea che JUnit crea e cancella da solo (`@TempDir`). Controlla che una partita salvata si ricarichi uguale (livello, esperienza, vita, reagenti, formule, piano e seme), con lo stesso nemico al suo piano, che un nuovo salvataggio sostituisca il vecchio, che la cartella venga creata se manca e che dopo `cancella()` non resti niente da caricare (cancellare quando non c'è nessun salvataggio non dà errore). Controlla anche i casi senza salvataggio valido: file assente, vuoto, rovinato, senza nome, con valori impossibili, con una formula che non esiste o scritto dalla versione precedente del gioco (senza livello e formule).

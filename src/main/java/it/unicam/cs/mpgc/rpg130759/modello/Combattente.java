@@ -14,8 +14,8 @@ import java.util.Objects;
 public abstract class Combattente {
     private final String nome;
     private final Elemento elemento;
-    private final int vitaMassima;
-    private final int reagentiMassimi;
+    private int vitaMassima;
+    private int reagentiMassimi;
     private int vita;
     private int reagenti;
     private final List<Effetto> effetti = new ArrayList<>();
@@ -168,6 +168,24 @@ public abstract class Combattente {
             }
         }
         return true;
+    }
+
+    /**
+     * Alza la vita massima e i reagenti massimi. La vita e i reagenti attuali
+     * crescono della stessa quantità. Serve a chi diventa più forte durante la partita,
+     * come l'alchimista quando sale di livello.
+     *
+     * @param vitaInPiu i punti vita massimi da aggiungere, non negativi
+     * @param reagentiInPiu i reagenti massimi da aggiungere, non negativi
+     */
+    protected void aumentaMassimi(int vitaInPiu, int reagentiInPiu) {
+        if (vitaInPiu < 0 || reagentiInPiu < 0) {
+            throw new IllegalArgumentException("I massimi non possono diminuire");
+        }
+        vitaMassima += vitaInPiu;
+        vita += vitaInPiu;
+        reagentiMassimi += reagentiInPiu;
+        reagenti += reagentiInPiu;
     }
 
     /**

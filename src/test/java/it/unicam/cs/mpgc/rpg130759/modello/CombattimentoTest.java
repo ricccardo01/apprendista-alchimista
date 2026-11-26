@@ -17,6 +17,7 @@ class CombattimentoTest {
     private static final int DANNO_MORSO = 5;
 
     private final Alchimista alchimista = new Alchimista("Alchimista");
+    private final Ricettario ricettario = new Ricettario(new Random(42));
 
     private NemicoComune vermeCieco(int vita, int dannoMorso) {
         Azione morso = new Colpo("Morso", 0, dannoMorso, Elemento.MERCURIO);
@@ -31,6 +32,15 @@ class CombattimentoTest {
             }
         }
         throw new IllegalArgumentException("Mossa non trovata: " + nome);
+    }
+
+    /**
+     * Fa imparare all'alchimista una formula del ricettario e la restituisce.
+     */
+    private Azione formulaNuova(String nome) {
+        Azione formula = ricettario.trova(nome);
+        alchimista.impara(formula);
+        return formula;
     }
 
     private Azione attaccoBase() {
@@ -55,7 +65,7 @@ class CombattimentoTest {
     void ilRinculoFinisceNelRegistroENeiDanniSubiti() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
 
-        scontro.turnoAlchimista(mossa("Esplosione di Zolfo"));
+        scontro.turnoAlchimista(formulaNuova("Esplosione di Zolfo"));
 
         assertEquals(64, scontro.getNemico().getVita());
         assertEquals(90, alchimista.getVita());
@@ -71,7 +81,7 @@ class CombattimentoTest {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
 
         scontro.turnoAlchimista(attaccoBase());
-        scontro.turnoAlchimista(mossa("Sanguisuga d'Argento"));
+        scontro.turnoAlchimista(formulaNuova("Sanguisuga d'Argento"));
 
         assertEquals(94, alchimista.getVita());
         assertEquals("Alchimista usa Sanguisuga d'Argento: 8 danni a Verme Cieco",
@@ -224,7 +234,7 @@ class CombattimentoTest {
     void ilNemicoPietrificatoSaltaIlTurnoELElementoRestaNascosto() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
 
-        scontro.turnoAlchimista(mossa("Cristalli Pietrificanti"));
+        scontro.turnoAlchimista(formulaNuova("Cristalli Pietrificanti"));
 
         assertEquals(100, alchimista.getVita());
         assertEquals("Verme Cieco è bloccato e salta il turno", scontro.getRegistro().get(1));
@@ -236,7 +246,7 @@ class CombattimentoTest {
     void ilVelenoAgisceAFineTurnoEContaTraIDanniInflitti() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
 
-        scontro.turnoAlchimista(mossa("Veleno Sulfureo"));
+        scontro.turnoAlchimista(formulaNuova("Veleno Sulfureo"));
 
         assertEquals(88, scontro.getNemico().getVita());
         assertEquals(12, scontro.getDannoInflitto());
@@ -247,7 +257,7 @@ class CombattimentoTest {
     void seIlVelenoSconfiggeIlNemicoLoScontroEVinto() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(12, DANNO_MORSO));
 
-        scontro.turnoAlchimista(mossa("Veleno Sulfureo"));
+        scontro.turnoAlchimista(formulaNuova("Veleno Sulfureo"));
 
         assertTrue(scontro.isVinto());
         assertEquals("Verme Cieco è sconfitto", scontro.getRegistro().get(3));
@@ -257,7 +267,7 @@ class CombattimentoTest {
     void seLAlchimistaCadeIlVelenoNonFaInTempoAdAgire() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(10, 200));
 
-        scontro.turnoAlchimista(mossa("Veleno Sulfureo"));
+        scontro.turnoAlchimista(formulaNuova("Veleno Sulfureo"));
 
         assertEquals(2, scontro.getNemico().getVita());
         assertTrue(scontro.isFinito());
@@ -268,7 +278,7 @@ class CombattimentoTest {
     void laCorazzaProteggeGiaDallaRispostaDelNemico() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, 10));
 
-        scontro.turnoAlchimista(mossa("Corazza di Sale"));
+        scontro.turnoAlchimista(formulaNuova("Corazza di Sale"));
 
         assertEquals(95, alchimista.getVita());
     }
@@ -277,7 +287,7 @@ class CombattimentoTest {
     void ilCatalizzatoreRaddoppiaIlColpoDelTurnoDopo() {
         Combattimento scontro = new Combattimento(alchimista, vermeCieco(100, DANNO_MORSO));
 
-        scontro.turnoAlchimista(mossa("Catalizzatore"));
+        scontro.turnoAlchimista(formulaNuova("Catalizzatore"));
         scontro.turnoAlchimista(mossa("Fiala Ardente"));
 
         assertEquals(60, scontro.getNemico().getVita());

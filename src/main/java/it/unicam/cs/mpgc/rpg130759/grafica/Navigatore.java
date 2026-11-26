@@ -3,6 +3,7 @@ package it.unicam.cs.mpgc.rpg130759.grafica;
 import it.unicam.cs.mpgc.rpg130759.modello.Alchimista;
 import it.unicam.cs.mpgc.rpg130759.modello.GeneratoreNemiciPerZona;
 import it.unicam.cs.mpgc.rpg130759.modello.Partita;
+import it.unicam.cs.mpgc.rpg130759.modello.Ricettario;
 import it.unicam.cs.mpgc.rpg130759.modello.StatoPartita;
 import it.unicam.cs.mpgc.rpg130759.persistenza.GestoreSalvataggi;
 import javafx.application.Platform;
@@ -46,7 +47,9 @@ public class Navigatore {
      * Salva subito la partita nuova, così sostituisce quella salvata in precedenza.
      */
     private void iniziaPartita(String nome) {
-        partita = new Partita(new Alchimista(nome), new GeneratoreNemiciPerZona(new Random().nextLong()));
+        Random caso = new Random();
+        partita = new Partita(new Alchimista(nome), new GeneratoreNemiciPerZona(caso.nextLong()),
+                new Ricettario(caso));
         salva();
         mostraCombattimento();
     }

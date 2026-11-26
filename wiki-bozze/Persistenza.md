@@ -17,13 +17,16 @@ Se il file non si riesce a scrivere (per esempio la cartella è protetta), il gi
 
 ## Cosa salvo
 
-Il file contiene cinque valori:
+Il file contiene otto valori:
 
 | Dato | Perché |
 |---|---|
 | `nome` | il nome scelto per l'alchimista |
+| `livello` | il livello dell'alchimista, da cui si ricalcolano vita massima e reagenti massimi |
+| `esperienza` | i punti raccolti verso il livello successivo |
 | `vita` | i punti vita dell'alchimista |
 | `reagenti` | i reagenti dell'alchimista |
+| `formule` | i nomi delle formule conosciute, nell'ordine in cui compaiono |
 | `piano` | il piano da cui riprendere |
 | `seme` | il numero da cui nasce il generatore casuale dei nemici |
 
@@ -32,12 +35,28 @@ Esempio di file:
 ```json
 {
   "nome": "Mira",
+  "livello": 2,
+  "esperienza": 40,
   "vita": 63,
   "reagenti": 20,
+  "formule": [
+    "Fiala Ardente",
+    "Nebbia Mercuriale",
+    "Polvere Cristallizzante",
+    "Corazza di Sale"
+  ],
   "piano": 6,
   "seme": -4962768465676381896
 }
 ```
+
+## Le formule
+
+Delle formule salvo solo il nome. Una formula è un oggetto con il suo comportamento (per esempio Corazza di Sale crea un effetto nuovo a ogni uso), e scriverla tutta nel file vorrebbe dire salvare anche il codice. Al caricamento il `Ricettario` ritrova la formula dal nome con `trova(nome)`. Se nel file c'è un nome che il ricettario non conosce, il salvataggio vale come rovinato.
+
+Non salvo nemmeno la vita massima e i reagenti massimi: dipendono solo dal livello, quindi il costruttore di `Alchimista` li ricalcola. Salvarli avrebbe permesso un file con un massimo che non corrisponde al livello.
+
+Un salvataggio fatto con la versione precedente del gioco (senza livello e formule) non si carica e si comincia una partita nuova. Non ho scritto una conversione perché il gioco non è ancora stato pubblicato e nessuno ha salvataggi vecchi da perdere.
 
 ## Il seme
 
@@ -66,5 +85,5 @@ Nei piani 4, 8 e 12, per ora, il nemico è uno dei tre della zona pescato a caso
 ## Estensioni future
 
 - Per salvare in un altro formato o su un server basta una nuova classe che implementa `GestoreSalvataggi`.
-- Quando aggiungerò livelli, formule imparate e reliquie, li aggiungerò a `DatiPartita`.
+- Quando aggiungerò reliquie, strumenti e oggetti, li aggiungerò a `DatiPartita`, salvando il nome come per le formule.
 - Più salvataggi con un pulsante "Salva": `SalvataggioJson` riceve già il file dal costruttore, quindi potrei creare un gestore per ogni slot.

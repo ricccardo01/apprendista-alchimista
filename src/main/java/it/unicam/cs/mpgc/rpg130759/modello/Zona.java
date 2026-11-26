@@ -3,15 +3,29 @@ package it.unicam.cs.mpgc.rpg130759.modello;
 /**
  * Le zone del laboratorio, dalla più alta alla più profonda.
  * Ogni zona occupa lo stesso numero di piani, uno dopo l'altro.
+ * Più la zona è profonda, più esperienza dà ogni scontro vinto.
  */
 public enum Zona {
-    CANTINE, LABORATORIO, FORNACE;
+    CANTINE(40), LABORATORIO(60), FORNACE(80);
 
     /** Quanti piani ha ogni zona. */
     public static final int PIANI_PER_ZONA = 4;
 
     /** L'ultimo piano dell'ultima zona: aggiungendo una zona cresce da solo. */
     public static final int ULTIMO_PIANO = values().length * PIANI_PER_ZONA;
+
+    private final int esperienzaPerScontro;
+
+    Zona(int esperienzaPerScontro) {
+        this.esperienzaPerScontro = esperienzaPerScontro;
+    }
+
+    /**
+     * @return i punti esperienza che l'alchimista guadagna vincendo uno scontro in questa zona
+     */
+    public int getEsperienzaPerScontro() {
+        return esperienzaPerScontro;
+    }
 
     /**
      * Trova la zona a cui appartiene un piano.
