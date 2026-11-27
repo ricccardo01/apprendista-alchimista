@@ -91,4 +91,12 @@ class FormuleSpecialiTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new ColpoInstabile("Instabile", 5, 10, 2, Elemento.MERCURIO, new Random(42)));
     }
+
+    @Test
+    void leDescrizioniDelleFormuleSpecialiSpieganoCosaFannoInPiu() {
+        assertEquals("18 danni (Zolfo), ma chi la usa perde 5 punti vita (mai sotto 1)",
+                new ColpoConRinculo("Esplosione", 8, 18, Elemento.ZOLFO, 5).getDescrizione());
+        assertEquals("Da 2 a 20 danni a caso (Mercurio)",
+                new ColpoInstabile("Instabile", 5, 2, 20, Elemento.MERCURIO, new Random(42)).getDescrizione());
+    }
 }

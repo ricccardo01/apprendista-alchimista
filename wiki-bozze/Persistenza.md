@@ -7,7 +7,9 @@ Salvo la partita solo tra un piano e l'altro, mai durante uno scontro. Così nel
 Il salvataggio è automatico, non c'è un pulsante "Salva". Avviene in due momenti:
 
 - quando inizio una partita nuova, così sostituisce subito quella vecchia;
-- ogni volta che l'alchimista scende al piano successivo.
+- ogni volta che l'alchimista scende al piano successivo, subito prima dello scontro.
+
+Se l'alchimista è salito di livello, il salvataggio avviene dopo la scelta della formula nuova. Le formule proposte non le salvo: se chiudo il gioco prima di scegliere, al caricamento rigioco il piano appena vinto e la scelta mi viene riproposta. Lo stesso succede se chiudo sulla schermata tra i piani.
 
 Quando la partita finisce, vinta o persa, il salvataggio viene cancellato: non ha senso continuare una partita finita, e chi perde ricomincia da capo. Lo cancello appena lo scontro finisce, non quando il giocatore preme "Continua", altrimenti basterebbe chiudere la finestra dopo una sconfitta per riprovare il piano.
 

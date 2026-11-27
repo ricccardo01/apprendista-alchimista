@@ -28,6 +28,13 @@ public abstract class Effetto {
         return nome;
     }
 
+    /**
+     * Cosa fa l'effetto a chi lo porta, detto con i suoi numeri veri.
+     *
+     * @return una frase che comincia con il verbo, per esempio "perde 4 punti vita a fine turno per 3 turni"
+     */
+    public abstract String getDescrizione();
+
     public int getTurniRimasti() {
         return turniRimasti;
     }

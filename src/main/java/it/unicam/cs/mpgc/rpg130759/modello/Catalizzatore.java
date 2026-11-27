@@ -13,6 +13,11 @@ public class Catalizzatore extends Effetto {
     }
 
     @Override
+    public String getDescrizione() {
+        return "fa " + MOLTIPLICATORE + " volte il danno con il colpo del turno dopo";
+    }
+
+    @Override
     public int modificaDannoInflitto(int danno) {
         termina();
         return danno * MOLTIPLICATORE;

@@ -17,6 +17,11 @@ public class ColpoAssorbente extends Colpo {
     }
 
     @Override
+    public String getDescrizione() {
+        return super.getDescrizione() + ", e chi la usa recupera metà della vita tolta";
+    }
+
+    @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         int vitaPrima = bersaglio.getVita();
         super.esegui(chi, bersaglio);

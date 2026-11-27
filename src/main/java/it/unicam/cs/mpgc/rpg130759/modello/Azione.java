@@ -21,6 +21,14 @@ public interface Azione {
     int getCosto();
 
     /**
+     * Spiega al giocatore cosa fa l'azione, usando i suoi numeri veri:
+     * se i numeri cambiano, la descrizione si aggiorna da sola.
+     *
+     * @return una frase breve, per esempio "10 danni (Zolfo)"
+     */
+    String getDescrizione();
+
+    /**
      * Quante volte l'azione si può usare in uno scontro. Di base non c'è limite:
      * solo le azioni che hanno un limite riscrivono questo metodo.
      *

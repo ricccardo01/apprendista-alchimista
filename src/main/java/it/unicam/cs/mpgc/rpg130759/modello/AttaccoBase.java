@@ -26,6 +26,11 @@ public class AttaccoBase implements Azione {
     }
 
     @Override
+    public String getDescrizione() {
+        return strumento.getDanno() + " danni (" + strumento.getElemento().getNome() + ")";
+    }
+
+    @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         bersaglio.subisciColpo(chi.potenziaDanno(strumento.getDanno()), strumento.getElemento());
     }

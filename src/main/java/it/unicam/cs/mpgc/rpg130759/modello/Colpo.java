@@ -43,6 +43,11 @@ public class Colpo implements Azione {
     }
 
     @Override
+    public String getDescrizione() {
+        return danno + " danni (" + elemento.getNome() + ")";
+    }
+
+    @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         bersaglio.subisciColpo(chi.potenziaDanno(danno), elemento);
     }

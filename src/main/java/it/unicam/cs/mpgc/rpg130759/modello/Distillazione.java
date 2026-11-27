@@ -26,6 +26,11 @@ public class Distillazione implements Azione {
     }
 
     @Override
+    public String getDescrizione() {
+        return "Recupera " + REAGENTI_RECUPERATI + " reagenti e " + VITA_RECUPERATA + " punti vita";
+    }
+
+    @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         chi.recuperaReagenti(REAGENTI_RECUPERATI);
         chi.cura(VITA_RECUPERATA);

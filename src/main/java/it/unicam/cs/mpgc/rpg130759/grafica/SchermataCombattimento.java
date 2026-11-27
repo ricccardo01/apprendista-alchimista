@@ -15,6 +15,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -90,10 +91,12 @@ public class SchermataCombattimento {
         riquadroNemico.setAlignment(Pos.CENTER);
         riquadroNemico.setPadding(new Insets(SPAZIO * 2));
 
-        Label nomeAlchimista = new Label(combattimento.getAlchimista().getNome());
+        Alchimista alchimista = combattimento.getAlchimista();
+        Label nomeAlchimista = new Label(alchimista.getNome());
         nomeAlchimista.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Label livello = new Label(Aspetto.testoLivello(alchimista));
         vitaAlchimista.setPrefWidth(LARGHEZZA_BARRA);
-        VBox riquadroAlchimista = new VBox(SPAZIO / 2, nomeAlchimista, vitaAlchimista, datiAlchimista);
+        VBox riquadroAlchimista = new VBox(SPAZIO / 2, nomeAlchimista, livello, vitaAlchimista, datiAlchimista);
         riquadroAlchimista.setAlignment(Pos.CENTER);
 
         VBox centro = new VBox(SPAZIO * 2, riquadroNemico, creaLegenda(), riquadroAlchimista);
@@ -110,7 +113,7 @@ public class SchermataCombattimento {
         HBox legenda = new HBox(SPAZIO);
         legenda.setAlignment(Pos.CENTER);
         for (Elemento elemento : List.of(Elemento.ZOLFO, Elemento.MERCURIO, Elemento.SALE)) {
-            Label voce = new Label(Aspetto.nomeDi(elemento));
+            Label voce = new Label(elemento.getNome());
             voce.setPadding(new Insets(2, 8, 2, 8));
             voce.setStyle("-fx-background-color: " + Aspetto.coloreDi(elemento) + "; -fx-background-radius: 4;");
             legenda.getChildren().add(voce);
@@ -132,6 +135,7 @@ public class SchermataCombattimento {
         rigaMosse.setAlignment(Pos.CENTER);
         for (Azione azione : combattimento.getAlchimista().getAzioni()) {
             Button pulsante = new Button(testoDi(azione));
+            pulsante.setTooltip(new Tooltip(azione.getDescrizione()));
             pulsante.setOnAction(evento -> scegli(azione));
             pulsanti.put(azione, pulsante);
             rigaMosse.getChildren().add(pulsante);
@@ -201,7 +205,7 @@ public class SchermataCombattimento {
     private void mostraElementoNemico() {
         if (combattimento.isElementoNemicoRivelato()) {
             Elemento elemento = combattimento.getNemico().getElemento();
-            elementoNemico.setText("Elemento: " + Aspetto.nomeDi(elemento));
+            elementoNemico.setText("Elemento: " + elemento.getNome());
             riquadroNemico.setStyle("-fx-background-color: " + Aspetto.coloreDi(elemento)
                     + "; -fx-background-radius: 8;");
         } else {

@@ -11,6 +11,11 @@ public class Pietrificazione extends Effetto {
     }
 
     @Override
+    public String getDescrizione() {
+        return "salta la sua mossa in questo turno";
+    }
+
+    @Override
     public boolean impedisceDiAgire() {
         return true;
     }

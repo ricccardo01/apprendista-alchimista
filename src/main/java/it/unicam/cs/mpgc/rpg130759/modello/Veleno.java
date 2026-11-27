@@ -12,6 +12,11 @@ public class Veleno extends Effetto {
     }
 
     @Override
+    public String getDescrizione() {
+        return "perde " + DANNO_PER_TURNO + " punti vita a fine turno per " + DURATA + " turni";
+    }
+
+    @Override
     protected void allaFineDelTurno(Combattente portatore) {
         portatore.subisciDanno(DANNO_PER_TURNO);
     }

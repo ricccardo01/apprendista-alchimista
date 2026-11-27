@@ -16,6 +16,8 @@ Le altre classi usano un solo metodo pubblico, `moltiplicatoreContro(bersaglio)`
 
 Ho messo la regola in un unico posto così il combattimento e le formule chiedono a `Elemento` quanto vale un colpo e non ripetono la logica. Per aggiungere un nuovo elemento basta aggiungere un valore all'enum e il suo caso nello switch; se dimentico il caso, il compilatore me lo segnala.
 
+Ogni elemento ha anche il suo nome da mostrare (`getNome()`, per esempio "Zolfo"). Prima il nome stava nella grafica, ma servivano anche le descrizioni delle mosse, che sono nel modello: l'ho spostato qui perché fa parte del contenuto del gioco, come i nomi delle formule.
+
 ### `Combattente` (classe astratta)
 
 È la base comune dell'alchimista e dei nemici: tiene nome, elemento, punti vita e reagenti. Ho scelto una classe astratta perché nel gioco non esiste un combattente generico, esistono solo personaggi concreti.
@@ -57,6 +59,8 @@ Un secondo costruttore ricrea l'alchimista con la vita e i reagenti di una parti
 ### `Azione` (interfaccia)
 
 Una mossa che un combattente fa nel suo turno: ha un nome, un costo in reagenti e il metodo `esegui(chi, bersaglio)`. La uso sia per l'alchimista sia per i nemici. Per aggiungere una mossa scrivo una nuova classe che implementa `Azione` e il combattimento la userà senza modifiche.
+
+Ogni azione ha anche una descrizione (`getDescrizione()`), che il giocatore legge quando sceglie una formula nuova o quando tiene il mouse su un pulsante dello scontro. La descrizione è costruita con i numeri veri della mossa, per esempio "10 danni (Zolfo)" oppure "4 danni (Zolfo), poi il bersaglio perde 4 punti vita a fine turno per 3 turni": quando cambierò i numeri al bilanciamento, le descrizioni si aggiorneranno da sole. Ogni classe scrive la sua, quindi la grafica non deve sapere che tipo di mossa ha davanti. Le sottoclassi di `Colpo` riusano la descrizione del colpo (`super.getDescrizione()`) e aggiungono solo la loro parte.
 
 `esegui` non paga il costo: lo paga `Combattente.usa`. Così ogni azione si occupa solo del suo effetto e non devo ripetere il pagamento in ogni classe.
 
@@ -111,6 +115,8 @@ Qualcosa che resta addosso a un combattente per alcuni turni. Ha un nome e i tur
 Nel progetto iniziale `Effetto` era un'interfaccia. L'ho fatta diventare una classe astratta perché tutti gli effetti contano i turni nello stesso modo: così il conteggio è scritto una volta sola. `fineTurno` è `final`: le sottoclassi non possono cambiare il conteggio, possono solo dire cosa succede in quel momento riscrivendo `allaFineDelTurno`.
 
 La classe ha quattro metodi che di base non fanno niente: `allaFineDelTurno`, `modificaDannoSubito`, `modificaDannoInflitto` e `impedisceDiAgire`. Ogni effetto riscrive solo quello che gli interessa. Per aggiungere un effetto nuovo scrivo una sottoclasse e non modifico né `Combattente` né `Combattimento`.
+
+L'unico metodo astratto è `getDescrizione()`: ogni effetto deve dire cosa fa, con una frase che comincia dal verbo (per esempio "perde 4 punti vita a fine turno per 3 turni"). Così `ColpoConEffetto` la attacca dopo "poi il bersaglio" e `Preparazione` dopo "Chi la usa". Per leggerla, queste due classi creano un effetto nuovo con il loro `Supplier` e poi lo buttano: è un oggetto piccolo e succede solo quando si mostra la descrizione.
 
 La durata conta anche il turno in cui l'effetto viene applicato, perché il primo fine turno arriva subito dopo la mossa. I numeri sono provvisori:
 
@@ -239,7 +245,9 @@ Avvia l'applicazione JavaFX: apre la finestra, crea il gestore dei salvataggi (`
 
 Decide quale schermata mostrare. Le schermate non si conoscono tra loro: ognuna riceve dal navigatore cosa fare quando il giocatore vuole andare avanti (un `Runnable`, oppure un `Consumer<String>` per il menu, che passa il nome scelto). Per esempio, quando si preme "Continua" dopo uno scontro, il navigatore guarda lo stato della partita: se è finita mostra la schermata finale, altrimenti fa scendere l'alchimista al piano dopo e mostra la schermata tra i piani.
 
-Decide anche quando salvare: quando inizia una partita nuova e ogni volta che l'alchimista scende di piano. Appena uno scontro chiude la partita (vinta o persa) cancella il salvataggio, già prima che il giocatore prema "Continua": così chiudere la finestra dopo una sconfitta non permette di riprovare il piano. Se il file non si riesce a scrivere, mostra un avviso e il gioco va avanti.
+Dopo la schermata tra i piani, se l'alchimista è salito di livello, mostra la scelta della formula nuova e solo dopo lo scontro del piano.
+
+Decide anche quando salvare: subito prima di ogni scontro, quindi quando inizia una partita nuova e quando l'alchimista scende di piano, dopo l'eventuale scelta della formula. Le formule proposte non vengono salvate: se chiudo il gioco prima di scegliere, rigioco il piano appena vinto e mi verranno riproposte. Appena uno scontro chiude la partita (vinta o persa) cancella il salvataggio, già prima che il giocatore prema "Continua": così chiudere la finestra dopo una sconfitta non permette di riprovare il piano. Se il file non si riesce a scrivere, mostra un avviso e il gioco va avanti.
 
 La finestra resta sempre la stessa e cambia solo il contenuto (`scena.setRoot(...)`). Per aggiungere una schermata nuova, come il negozio, basta scriverla e collegarla qui, senza toccare le altre.
 
@@ -249,7 +257,13 @@ Il titolo del gioco, una casella per il nome dell'alchimista e i pulsanti "Nuova
 
 ### `SchermataTraPiani`
 
-Compare dopo ogni scontro vinto. Dice quale piano è stato superato, quanta vita e quanti reagenti ha recuperato l'alchimista e se sta entrando in una nuova zona. Il recupero lo calcola `Partita`: il navigatore legge la vita prima e dopo il passaggio di piano e passa la differenza alla schermata.
+Compare dopo ogni scontro vinto. Dice quale piano è stato superato, se l'alchimista è salito di livello, quanta vita e quanti reagenti ha recuperato, il livello con l'esperienza e se sta entrando in una nuova zona. Il recupero lo calcola `Partita`: il navigatore legge vita e reagenti prima e dopo il passaggio di piano e passa la differenza alla schermata. Da questa differenza toglie quello che arriva dal livello nuovo (salendo di livello vita e reagenti crescono insieme ai massimi), che la schermata annuncia a parte. Se ci sono formule da scegliere, il pulsante diventa "Scegli una formula nuova" invece di "Scendi al piano".
+
+### `SchermataNuovaFormula`
+
+Compare solo dopo un salto di livello. Mostra le due formule proposte dal ricettario, una accanto all'altra, con nome, costo e descrizione, e un pulsante "Impara" per ognuna; sotto c'è "Rinuncia". Se l'alchimista conosce già 5 formule, premendo "Impara" la schermata mostra l'elenco delle formule conosciute, ognuna con il pulsante "Dimentica", e un pulsante "Indietro" per tornare alle proposte.
+
+La schermata non controlla le regole: chiama `imparaFormula`, `imparaFormulaAlPostoDi` o `rinunciaAllaFormula` della partita, che rifiuta le scelte non valide. Usa solo `haSpazioPerFormula()` per sapere quale delle due parti mostrare.
 
 ### `SchermataFinale`
 
@@ -257,11 +271,11 @@ Dice se la partita è vinta o persa, e in caso di sconfitta il piano e la zona r
 
 ### `Aspetto`
 
-Raccoglie in un posto solo come la grafica mostra le cose del modello: i nomi e i colori degli elementi, i nomi delle zone e gli stili usati da più schermate. Prima colori e nomi erano dentro `SchermataCombattimento`; quando sono serviti anche altrove li ho spostati qui invece di copiarli.
+Raccoglie in un posto solo come la grafica mostra le cose del modello: i colori degli elementi, i nomi delle zone, il testo con livello ed esperienza (usato sia nello scontro sia tra i piani) e gli stili usati da più schermate. Prima colori e nomi erano dentro `SchermataCombattimento`; quando sono serviti anche altrove li ho spostati qui invece di copiarli. I nomi degli elementi ora stanno in `Elemento`.
 
 ### `SchermataCombattimento`
 
-Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Nel testo del pulsante c'è il costo della mossa in reagenti, tra parentesi (per esempio "Fiala Ardente (4)"), e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`). Per le mosse con un limite il pulsante mostra anche gli usi rimasti, per esempio "Distillazione [1 su 2]", e si spegne quando sono finiti (lo chiede a `puoUsare` del combattimento). I pulsanti stanno in un `FlowPane`, un contenitore che li manda a capo da solo quando non ci stanno in una riga. Accanto a vita e reagenti compaiono gli effetti attivi con i turni che restano, per esempio "Veleno (2)".
+Mostra uno scontro: il nemico in alto, l'alchimista in basso, il registro dei messaggi a destra e un pulsante per ogni mossa. Nel testo del pulsante c'è il costo della mossa in reagenti, tra parentesi (per esempio "Fiala Ardente (4)"), e le mosse che non si possono pagare restano disattivate (lo controllo con `haReagenti`). Per le mosse con un limite il pulsante mostra anche gli usi rimasti, per esempio "Distillazione [1 su 2]", e si spegne quando sono finiti (lo chiede a `puoUsare` del combattimento). I pulsanti stanno in un `FlowPane`, un contenitore che li manda a capo da solo quando non ci stanno in una riga. Accanto a vita e reagenti compaiono gli effetti attivi con i turni che restano, per esempio "Veleno (2)". Sotto il nome dell'alchimista ci sono livello ed esperienza. Tenendo il mouse su un pulsante compare la descrizione della mossa (un `Tooltip`).
 
 Quando si preme un pulsante, la schermata passa la mossa a `turnoAlchimista` e poi rilegge tutto dal modello: vita, reagenti, registro e se l'elemento del nemico è stato scoperto. Finché non è scoperto il riquadro del nemico ha solo un bordo tratteggiato; dopo prende il colore del suo elemento (Zolfo giallo, Mercurio grigio, Sale azzurrino), e una piccola legenda spiega i colori.
 
@@ -279,9 +293,9 @@ La schermata non contiene regole del gioco. Per fare una versione web o mobile b
 
 `RicettarioTest` controlla che il ricettario abbia 10 formule, che trovi una formula dal nome (e rifiuti un nome sconosciuto), che proponga sempre 2 formule diverse che l'alchimista non conosce, che possa riproporre una formula iniziale dimenticata e che la lista delle proposte non si possa modificare.
 
-`AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi.
+`AzioniTest` controlla cosa fanno attacco base, colpo e Distillazione, e che non si possano creare strumenti o colpi con valori non validi. Controlla anche le descrizioni: devono contenere i numeri veri della mossa.
 
-`EffettiTest` controlla ogni effetto da solo: quanto toglie il Veleno e quando sparisce, che la Corazza dimezzi i colpi ma non il Veleno, che il Catalizzatore valga per un solo colpo e si perda se non viene usato, che la Pietrificazione blocchi solo fino a fine turno, che lo stesso effetto non si sommi e che la lista degli effetti non si possa modificare da fuori. Controlla anche `ColpoConEffetto` (ogni bersaglio riceve un effetto nuovo, nessun effetto su un bersaglio già sconfitto) e `Preparazione` (l'effetto va a chi la usa).
+`EffettiTest` controlla ogni effetto da solo: quanto toglie il Veleno e quando sparisce, che la Corazza dimezzi i colpi ma non il Veleno, che il Catalizzatore valga per un solo colpo e si perda se non viene usato, che la Pietrificazione blocchi solo fino a fine turno, che lo stesso effetto non si sommi e che la lista degli effetti non si possa modificare da fuori. Controlla anche `ColpoConEffetto` (ogni bersaglio riceve un effetto nuovo, nessun effetto su un bersaglio già sconfitto) e `Preparazione` (l'effetto va a chi la usa). Controlla infine che le loro descrizioni comprendano quella dell'effetto.
 
 `NemicoComuneTest` controlla che il nemico usi tutte le sue mosse quando ha i reagenti, solo quelle gratuite quando non li ha, che con lo stesso seme faccia le stesse scelte e che non si possa creare un nemico senza mosse gratuite.
 

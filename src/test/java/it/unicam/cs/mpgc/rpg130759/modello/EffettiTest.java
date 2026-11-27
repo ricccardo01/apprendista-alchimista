@@ -153,4 +153,14 @@ class EffettiTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new Preparazione("Costo negativo", -1, () -> new Veleno()));
     }
+
+    @Test
+    void laDescrizioneDelleFormuleConEffettoComprendeQuellaDellEffetto() {
+        Azione veleno = new ColpoConEffetto("Veleno Sulfureo", 5, 4, Elemento.ZOLFO, () -> new Veleno());
+        Azione corazza = new Preparazione("Corazza di Sale", 5, () -> new CorazzaDiSale());
+
+        assertEquals("4 danni (Zolfo), poi il bersaglio perde 4 punti vita a fine turno per 3 turni",
+                veleno.getDescrizione());
+        assertEquals("Chi la usa subisce il 50% dei danni dei colpi per 3 turni", corazza.getDescrizione());
+    }
 }

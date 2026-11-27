@@ -50,6 +50,11 @@ public class ColpoInstabile implements Azione {
     }
 
     @Override
+    public String getDescrizione() {
+        return "Da " + dannoMinimo + " a " + dannoMassimo + " danni a caso (" + elemento.getNome() + ")";
+    }
+
+    @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         int danno = dannoMinimo + caso.nextInt(dannoMassimo - dannoMinimo + 1);
         bersaglio.subisciColpo(chi.potenziaDanno(danno), elemento);

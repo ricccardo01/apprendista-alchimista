@@ -50,4 +50,12 @@ class AzioniTest {
         assertThrows(IllegalArgumentException.class, () -> new Colpo("Gratis", -1, 10, Elemento.ZOLFO));
         assertThrows(NullPointerException.class, () -> new AttaccoBase(null));
     }
+
+    @Test
+    void leDescrizioniUsanoINumeriVeriDelleAzioni() {
+        assertEquals("10 danni (Zolfo)", new Colpo("Fiala Ardente", 5, 10, Elemento.ZOLFO).getDescrizione());
+        assertEquals("6 danni (Neutro)",
+                new AttaccoBase(new Strumento("Pestello", 6, Elemento.NEUTRO)).getDescrizione());
+        assertEquals("Recupera 8 reagenti e 5 punti vita", new Distillazione().getDescrizione());
+    }
 }

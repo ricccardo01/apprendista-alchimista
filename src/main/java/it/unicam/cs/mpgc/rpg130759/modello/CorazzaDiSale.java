@@ -12,6 +12,11 @@ public class CorazzaDiSale extends Effetto {
     }
 
     @Override
+    public String getDescrizione() {
+        return "subisce il " + Math.round(RIDUZIONE * 100) + "% dei danni dei colpi per " + DURATA + " turni";
+    }
+
+    @Override
     public int modificaDannoSubito(int danno) {
         return (int) Math.round(danno * RIDUZIONE);
     }

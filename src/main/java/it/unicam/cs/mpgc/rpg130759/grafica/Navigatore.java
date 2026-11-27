@@ -18,7 +18,7 @@ import java.util.Random;
  * Decide quale schermata mostrare nella finestra. Le schermate non si conoscono
  * tra loro: quando il giocatore vuole andare avanti avvisano il navigatore,
  * che sceglie la schermata successiva in base allo stato della partita.
- * Salva la partita all'inizio di ogni piano e cancella il salvataggio
+ * Salva la partita prima di ogni scontro, dopo l'eventuale scelta di una formula, e cancella il salvataggio
  * appena la partita finisce, così non si può continuare una partita finita.
  */
 public class Navigatore {
@@ -50,8 +50,7 @@ public class Navigatore {
         Random caso = new Random();
         partita = new Partita(new Alchimista(nome), new GeneratoreNemiciPerZona(caso.nextLong()),
                 new Ricettario(caso));
-        salva();
-        mostraCombattimento();
+        iniziaScontro();
     }
 
     private void continuaPartita(Partita salvata) {
@@ -76,7 +75,9 @@ public class Navigatore {
 
     /**
      * Se la partita è finita mostra la schermata finale, altrimenti fa scendere
-     * l'alchimista al piano successivo, salva e mostra quanto ha recuperato.
+     * l'alchimista al piano successivo e mostra quanto ha recuperato.
+     * Il recupero è contato senza la vita e i reagenti dati dal livello nuovo,
+     * che crescono insieme ai massimi e la schermata annuncia a parte.
      */
     private void dopoLoScontro() {
         if (partita.getStato() != StatoPartita.IN_CORSO) {
@@ -84,14 +85,34 @@ public class Navigatore {
             return;
         }
         Alchimista alchimista = partita.getAlchimista();
+        int livelloPrima = alchimista.getLivello();
         int vitaPrima = alchimista.getVita();
+        int vitaMassimaPrima = alchimista.getVitaMassima();
         int reagentiPrima = alchimista.getReagenti();
+        int reagentiMassimiPrima = alchimista.getReagentiMassimi();
         partita.passaAlPianoSuccessivo();
+        int vitaDalLivello = alchimista.getVitaMassima() - vitaMassimaPrima;
+        int reagentiDalLivello = alchimista.getReagentiMassimi() - reagentiMassimiPrima;
+        int vitaRecuperata = alchimista.getVita() - vitaPrima - vitaDalLivello;
+        int reagentiRecuperati = alchimista.getReagenti() - reagentiPrima - reagentiDalLivello;
+        boolean salitoDiLivello = alchimista.getLivello() > livelloPrima;
+        Runnable avanti = partita.getProposte().isEmpty() ? this::iniziaScontro : this::mostraNuovaFormula;
+        scena.setRoot(new SchermataTraPiani(partita, salitoDiLivello, vitaRecuperata,
+                reagentiRecuperati, avanti).getRadice());
+    }
+
+    private void mostraNuovaFormula() {
+        scena.setRoot(new SchermataNuovaFormula(partita, this::iniziaScontro).getRadice());
+    }
+
+    /**
+     * Salva e mostra lo scontro del piano. Tra un piano e l'altro si arriva qui
+     * solo dopo l'eventuale scelta della formula: le proposte non vengono salvate,
+     * quindi chi chiude il gioco prima rigioca il piano appena vinto.
+     */
+    private void iniziaScontro() {
         salva();
-        int vitaRecuperata = alchimista.getVita() - vitaPrima;
-        int reagentiRecuperati = alchimista.getReagenti() - reagentiPrima;
-        scena.setRoot(new SchermataTraPiani(partita, vitaRecuperata, reagentiRecuperati,
-                this::mostraCombattimento).getRadice());
+        mostraCombattimento();
     }
 
     /**

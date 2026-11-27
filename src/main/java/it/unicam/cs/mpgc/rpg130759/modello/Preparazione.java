@@ -36,6 +36,14 @@ public class Preparazione implements Azione {
         return costo;
     }
 
+    /**
+     * Per leggere la descrizione dell'effetto ne crea uno nuovo, che poi non viene usato.
+     */
+    @Override
+    public String getDescrizione() {
+        return "Chi la usa " + creaEffetto.get().getDescrizione();
+    }
+
     @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         chi.aggiungiEffetto(creaEffetto.get());

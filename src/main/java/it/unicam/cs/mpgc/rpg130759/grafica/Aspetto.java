@@ -1,11 +1,12 @@
 package it.unicam.cs.mpgc.rpg130759.grafica;
 
+import it.unicam.cs.mpgc.rpg130759.modello.Alchimista;
 import it.unicam.cs.mpgc.rpg130759.modello.Elemento;
 import it.unicam.cs.mpgc.rpg130759.modello.Zona;
 
 /**
  * Raccoglie in un posto solo come la grafica mostra le cose del modello:
- * i nomi da scrivere, i colori degli elementi e gli stili condivisi tra le schermate.
+ * i testi usati da più schermate, i colori degli elementi e gli stili condivisi.
  */
 final class Aspetto {
     /** Spazio standard tra gli elementi delle schermate, in pixel. */
@@ -16,15 +17,6 @@ final class Aspetto {
     private Aspetto() {
     }
 
-    static String nomeDi(Elemento elemento) {
-        return switch (elemento) {
-            case ZOLFO -> "Zolfo";
-            case MERCURIO -> "Mercurio";
-            case SALE -> "Sale";
-            case NEUTRO -> "Neutro";
-        };
-    }
-
     static String coloreDi(Elemento elemento) {
         return switch (elemento) {
             case ZOLFO -> "#e3c13b";
@@ -32,6 +24,14 @@ final class Aspetto {
             case SALE -> "#dcebf2";
             case NEUTRO -> "#a87b50";
         };
+    }
+
+    /**
+     * Livello ed esperienza dell'alchimista, per esempio "Livello 2   Esperienza 35/150".
+     */
+    static String testoLivello(Alchimista alchimista) {
+        return "Livello " + alchimista.getLivello() + "   Esperienza "
+                + alchimista.getEsperienza() + "/" + alchimista.getEsperienzaPerSalire();
     }
 
     static String nomeDi(Zona zona) {

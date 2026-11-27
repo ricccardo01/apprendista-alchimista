@@ -24,6 +24,14 @@ public class ColpoConEffetto extends Colpo {
         this.creaEffetto = Objects.requireNonNull(creaEffetto, "L'effetto è obbligatorio");
     }
 
+    /**
+     * Per leggere la descrizione dell'effetto ne crea uno nuovo, che poi non viene usato.
+     */
+    @Override
+    public String getDescrizione() {
+        return super.getDescrizione() + ", poi il bersaglio " + creaEffetto.get().getDescrizione();
+    }
+
     @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         super.esegui(chi, bersaglio);

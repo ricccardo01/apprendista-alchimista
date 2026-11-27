@@ -13,19 +13,21 @@ import java.util.Objects;
 
 /**
  * La pausa tra uno scontro e l'altro: dice quale piano è stato superato,
- * quanto ha recuperato l'alchimista e se sta entrando in una nuova zona.
- * Va mostrata dopo che la partita è già passata al piano successivo.
+ * se l'alchimista è salito di livello, quanto ha recuperato e se sta entrando
+ * in una nuova zona. Va mostrata dopo che la partita è già passata al piano successivo.
  */
 public class SchermataTraPiani {
     private final VBox radice = new VBox(Aspetto.SPAZIO);
 
     /**
      * @param partita la partita, già passata al nuovo piano
-     * @param vitaRecuperata i punti vita recuperati passando di piano
-     * @param reagentiRecuperati i reagenti recuperati passando di piano
-     * @param alProseguire cosa fare quando il giocatore scende al piano
+     * @param salitoDiLivello true se l'alchimista è appena salito di livello
+     * @param vitaRecuperata i punti vita recuperati riposando, senza quelli dati dal livello
+     * @param reagentiRecuperati i reagenti recuperati riposando, senza quelli dati dal livello
+     * @param alProseguire cosa fare quando il giocatore preme il pulsante per andare avanti
      */
-    public SchermataTraPiani(Partita partita, int vitaRecuperata, int reagentiRecuperati, Runnable alProseguire) {
+    public SchermataTraPiani(Partita partita, boolean salitoDiLivello, int vitaRecuperata,
+                             int reagentiRecuperati, Runnable alProseguire) {
         Objects.requireNonNull(partita);
         Objects.requireNonNull(alProseguire);
         int piano = partita.getPiano();
@@ -33,19 +35,30 @@ public class SchermataTraPiani {
 
         Label titolo = new Label("Piano " + (piano - 1) + " superato");
         titolo.setStyle(Aspetto.STILE_TITOLO);
+        radice.getChildren().add(titolo);
+        if (salitoDiLivello) {
+            Label livelloNuovo = new Label("Livello " + alchimista.getLivello()
+                    + " raggiunto: vita e reagenti massimi aumentano.");
+            livelloNuovo.setStyle(Aspetto.STILE_TESTO + " -fx-font-weight: bold;");
+            radice.getChildren().add(livelloNuovo);
+        }
         Label recupero = new Label("Ti riposi e recuperi " + vitaRecuperata + " punti vita e "
                 + reagentiRecuperati + " reagenti.");
         Label stato = new Label("Vita " + alchimista.getVita() + "/" + alchimista.getVitaMassima()
                 + "   Reagenti " + alchimista.getReagenti() + "/" + alchimista.getReagentiMassimi());
+        Label livello = new Label(Aspetto.testoLivello(alchimista));
         Label zona = new Label(testoZona(piano));
-        for (Label testo : new Label[] {recupero, stato, zona}) {
+        for (Label testo : new Label[] {recupero, stato, livello, zona}) {
             testo.setStyle(Aspetto.STILE_TESTO);
         }
 
-        Button scendi = new Button("Scendi al piano " + piano);
-        scendi.setOnAction(evento -> alProseguire.run());
+        String testoPulsante = partita.getProposte().isEmpty()
+                ? "Scendi al piano " + piano
+                : "Scegli una formula nuova";
+        Button avanti = new Button(testoPulsante);
+        avanti.setOnAction(evento -> alProseguire.run());
 
-        radice.getChildren().addAll(titolo, recupero, stato, zona, scendi);
+        radice.getChildren().addAll(recupero, stato, livello, zona, avanti);
         radice.setAlignment(Pos.CENTER);
     }
 

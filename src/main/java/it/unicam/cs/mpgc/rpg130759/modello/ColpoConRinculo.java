@@ -23,6 +23,11 @@ public class ColpoConRinculo extends Colpo {
     }
 
     @Override
+    public String getDescrizione() {
+        return super.getDescrizione() + ", ma chi la usa perde " + rinculo + " punti vita (mai sotto 1)";
+    }
+
+    @Override
     public void esegui(Combattente chi, Combattente bersaglio) {
         super.esegui(chi, bersaglio);
         chi.subisciDanno(Math.min(rinculo, chi.getVita() - 1));

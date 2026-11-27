@@ -6,11 +6,24 @@ package it.unicam.cs.mpgc.rpg130759.modello;
  * Neutro non prevale su nessuno e nessuno prevale su di lui.
  */
 public enum Elemento {
-    ZOLFO, MERCURIO, SALE, NEUTRO;
+    ZOLFO("Zolfo"), MERCURIO("Mercurio"), SALE("Sale"), NEUTRO("Neutro");
 
     private static final double VANTAGGIO = 2.0;
     private static final double SVANTAGGIO = 0.5;
     private static final double NORMALE = 1.0;
+
+    private final String nome;
+
+    Elemento(String nome) {
+        this.nome = nome;
+    }
+
+    /**
+     * @return il nome mostrato nel gioco, per esempio "Zolfo"
+     */
+    public String getNome() {
+        return nome;
+    }
 
     /**
      * Restituisce il moltiplicatore del danno quando questo elemento colpisce il bersaglio.
